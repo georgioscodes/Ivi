@@ -53,8 +53,18 @@ Client records contain weight, body composition, blood markers and clinical note
   cover this.
 - Data stays in an EU region.
 
+## UI
+
+Brand palette: `#a18276` taupe, `#b9d2b1` sage, `#dac6b5` sand, `#f1d6b8` peach, `#fbacbe` pink.
+
+These are **surface colours only**. None passes WCAG AA as text on white, and none takes white text
+on top. Use them as fills with dark ink (`#2b2320`) on top, never the other way round. They also
+must not be used to encode category or chart series — their pairwise contrast is as low as 1.01.
+See [`docs/ui-palette.md`](./docs/ui-palette.md) for the full token set and rules.
+
 ## Reference documents
 
 - [`docs/ivi-feature-roadmap.md`](./docs/ivi-feature-roadmap.md) — the 46 features, phased.
 - [`docs/mvp-build-analysis.md`](./docs/mvp-build-analysis.md) — MVP architecture, module map,
   schemas, build order, risks.
+- [`docs/ui-palette.md`](./docs/ui-palette.md) — brand colours, contrast constraints, tokens.

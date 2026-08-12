@@ -243,21 +243,70 @@ arithmetic in the browser, so the plan builder needs genuine client-side state.
 
 **Recommendation: React + TypeScript + Vite, compiled into the Spring Boot jar.**
 
-The frontend build runs as part of the Maven build (`frontend-maven-plugin`, or
-`gradle-node-plugin` on Gradle): `npm ci && npm run build`, with Vite's output written to
-`target/classes/static/`. Spring Boot serves it from the same jar. One artifact, one version, one
-deploy.
+The frontend build runs as part of the backend build — `npm ci && npm run build` — with Vite's
+output copied onto the classpath under `static/`. Spring Boot serves it from the same jar. One
+artifact, one version, one deploy. This works on either build tool; see below.
 
-Two pieces of wiring are needed:
-
-- **SPA fallback routing.** A `WebMvcConfigurer` forwards any non-`/api`, non-asset path to
-  `index.html` so browser-side routes survive a page refresh. Keep the API under a distinct prefix
-  so the rule stays unambiguous.
-- **A build profile.** Put the npm steps behind a Maven profile so an ordinary backend compile does
-  not pay for a frontend build. Enable it in CI and for release builds.
+One piece of wiring is needed regardless: **SPA fallback routing.** A `WebMvcConfigurer` forwards
+any non-`/api`, non-asset path to `index.html` so browser-side routes survive a page refresh. Keep
+the API under a distinct prefix so the rule stays unambiguous.
 
 In development, run the Vite dev server with a proxy to `:8080` — hot reload while developing, a
 single bundled artifact when packaging.
+
+### Gradle (recommended)
+
+Use the [gradle-node-plugin](https://github.com/node-gradle/gradle-node-plugin). Node itself is
+downloaded by the build, so contributors and CI need no local Node install.
+
+```kotlin
+import com.github.gradle.node.npm.task.NpmTask
+
+plugins {
+    id("org.springframework.boot") version "3.4.x"
+    id("com.github.node-gradle.node") version "7.1.0"
+}
+
+node {
+    version.set("22.11.0")
+    download.set(true)
+    npmInstallCommand.set("ci")            // reproducible installs, not `npm install`
+    nodeProjectDir.set(file("src/main/frontend"))
+}
+
+val buildFrontend by tasks.registering(NpmTask::class) {
+    dependsOn(tasks.npmInstall)
+    npmCommand.set(listOf("run", "build"))
+
+    // Declared so Gradle can skip this entirely when nothing changed.
+    inputs.dir("src/main/frontend/src")
+    inputs.files("src/main/frontend/package.json", "src/main/frontend/vite.config.ts")
+    outputs.dir("src/main/frontend/dist")
+
+    onlyIf { !project.hasProperty("skipFrontend") }
+}
+
+tasks.processResources {
+    dependsOn(buildFrontend)
+    from("src/main/frontend/dist") { into("static") }
+}
+```
+
+**Gradle is the better fit here, and the reason is the `inputs`/`outputs` declaration.** With those
+declared, Gradle's up-to-date checking skips the npm build outright whenever frontend sources are
+unchanged, and the build cache can restore it across clean builds and CI agents. A backend-only
+change costs nothing. `-PskipFrontend` remains as an explicit override.
+
+### Maven
+
+`frontend-maven-plugin` does the equivalent job: an `install-node-and-npm` execution, then `ci` and
+`run build` goals bound to `generate-resources`, with Vite configured to emit into
+`target/classes/static/`.
+
+Maven has no equivalent of Gradle's input-based up-to-date checking, so the npm build re-runs on
+every package unless it is put behind a profile that is off by default and enabled in CI. That
+profile is a workaround for a missing feature rather than a design choice — which is the practical
+argument for Gradle if the decision is still open.
 
 **This choice reinforces §4.2.** Serving the UI from the same origin as the API means session
 cookies work with no CORS configuration and no token sitting in `localStorage` — a real security

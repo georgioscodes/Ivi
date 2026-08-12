@@ -1,1 +1,15 @@
 .claude/settings.local.json
+
+# Terraform — state must live in the remote GCS backend, never in the repo
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+*.tfvars
+!example.tfvars

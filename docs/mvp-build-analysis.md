@@ -211,6 +211,69 @@ The food tables are bulk reference data, not user data. Load via a Flyway repeat
 startup importer reading a versioned CSV, with the source and its version recorded. Nutrition data
 gets corrected over time and you need to know which revision a given plan was built against.
 
+**USDA FoodData Central: download, do not scrape.** FDC publishes full bulk exports in CSV and JSON
+and a free REST API. The data is US Government work in the public domain (CC0 1.0). Scraping would
+be slower, more fragile and would gain nothing.
+
+| Dataset | Take it? | Why |
+|---|---|---|
+| **SR Legacy** | Yes | Generic whole foods with broad nutrient coverage. Final release 2018 — stable, which is a virtue for reference data. |
+| **Foundation Foods** | Yes | Actively maintained, updated roughly semi-annually, with sampling provenance. |
+| **FNDDS (Survey)** | Maybe | Mixed dishes as consumed. Useful for composite foods; US recipes. |
+| **Branded** | No | ~600k manufacturer products, US retail, label-derived and noisy. It is also the one dataset sourced through a manufacturer partnership rather than authored by USDA, so its terms deserve a closer read if it is ever wanted. |
+
+Use the **bulk download for ingestion**; the API is rate-limited and intended for lookup, not for
+loading a database.
+
+Two integration notes: FDC nutrients carry their own identifiers and units, so an explicit mapping
+into the local `nutrient` table is required rather than a direct import; and portion data
+(`food_portion`) is present but uneven, so expect to author portions for high-traffic foods by hand.
+
+**This does not close the food data risk.** USDA supplies a nutrient backbone in English for US
+foods. It does not supply Greek foods, Greek names, or the exchange-list groupings the builder
+categorizes by. That localized layer remains the product's real asset and still has to be sourced
+or authored. Treat USDA as the substrate, not the solution.
+
+---
+
+## 4a. Frontend stack and single-artifact packaging
+
+Requirement: frontend and backend ship as one deployable. Constraint: §1.1 puts real nutrient
+arithmetic in the browser, so the plan builder needs genuine client-side state.
+
+**Recommendation: React + TypeScript + Vite, compiled into the Spring Boot jar.**
+
+The frontend build runs as part of the Maven build (`frontend-maven-plugin`, or
+`gradle-node-plugin` on Gradle): `npm ci && npm run build`, with Vite's output written to
+`target/classes/static/`. Spring Boot serves it from the same jar. One artifact, one version, one
+deploy.
+
+Two pieces of wiring are needed:
+
+- **SPA fallback routing.** A `WebMvcConfigurer` forwards any non-`/api`, non-asset path to
+  `index.html` so browser-side routes survive a page refresh. Keep the API under a distinct prefix
+  so the rule stays unambiguous.
+- **A build profile.** Put the npm steps behind a Maven profile so an ordinary backend compile does
+  not pay for a frontend build. Enable it in CI and for release builds.
+
+In development, run the Vite dev server with a proxy to `:8080` — hot reload while developing, a
+single bundled artifact when packaging.
+
+**This choice reinforces §4.2.** Serving the UI from the same origin as the API means session
+cookies work with no CORS configuration and no token sitting in `localStorage` — a real security
+gain when the payload is health data.
+
+Accept one tradeoff knowingly: a frontend-only fix requires redeploying the whole application. For
+a single-team product this is a fair price for never having a version skew between UI and API.
+
+### Alternatives considered
+
+| Option | Verdict |
+|---|---|
+| **Thymeleaf + HTMX** | Strong for the CRUD screens — clients, measurements, journal — and pleasant in a Java-centric team. Poor for the plan builder, which is the one screen needing local state and per-interaction recompute. A hybrid (Thymeleaf everywhere, a JS island for the builder) is defensible if frontend capacity is scarce, at the cost of two paradigms and two build paths. |
+| **Vaadin** | Java-only and genuinely single-artifact, but every interaction round-trips to the server. That is precisely what §1.1 exists to avoid. Rejected on the product's core interaction. |
+| **Separate frontend deployment** (static host or nginx, API separate) | The conventional split, and ruled out by the single-artifact requirement. Worth revisiting only if the client mobile app (#27) later makes the API a genuinely public interface. |
+
 ---
 
 ## 5. Suggested build order
@@ -240,7 +303,7 @@ pure functions with published reference values, so it should reach near-100% bra
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| **Food data acquisition and licensing** | Blocks the entire product | The largest non-engineering risk in the MVP. USDA is public domain; national composition tables and exchange lists frequently are not. Resolve licensing **before** step 3, not after. Localized Greek food data is the asset — treat sourcing it as a project, not a task. |
+| **Greek food data acquisition** | Blocks the entire product | The largest non-engineering risk in the MVP. USDA is settled and free (§4.4), which removes the *nutrient backbone* from the risk but not the Greek layer: localized names, national composition values and exchange-list groupings. Those are separately licensed or must be authored. Resolve **before** step 3. Treat it as a project, not a task. |
 | **Dual nutrient arithmetic drifting** | Visible wrong numbers, trust damage | Shared fixture set run against both implementations in CI. |
 | **Plan aggregate performance** | Builder feels slow, the one thing that must not | Query-count assertions in `@DataJpaTest`; fetch plans by graph. |
 | **Greek font handling in PDF** | Broken client-facing output | Assert on extracted PDF text in an integration test, not visual inspection. |
@@ -276,11 +339,9 @@ wire.
 
 ## 8. Open questions
 
-1. **Food data sources** — which tables, under what licence? Gates step 3 and the whole schedule.
+1. **Greek food data** — which national composition table and which exchange list, under what
+   licence? USDA is resolved (§4.4); this is the part that still gates step 3 and the schedule.
 2. **Client-facing scope in MVP** — the roadmap's MVP is practitioner-only; the client mobile app
    is #27. Confirm no client-facing surface is expected at launch, since it changes auth
    substantially.
 3. **Deployment target and jurisdiction** — drives the GDPR posture in §4.1.
-4. **Frontend stack** — assumed to be an SPA in §1.1. If server-rendered pages are intended
-   instead, that decision needs revisiting first, because it invalidates the local-computation
-   approach.

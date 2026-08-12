@@ -24,8 +24,22 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+  session:
+    store-type: jdbc
+    timeout: 30m
+    jdbc:
+      # Schema is created by Flyway (V2). Spring must not attempt its own DDL.
+      initialize-schema: never
+
 server:
   port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        # Overridden to true wherever the app is served over TLS.
+        secure: ${COOKIE_SECURE:false}
+        same-site: lax
   error:
     # Errors are shaped by GlobalExceptionHandler; the default whitelabel page leaks detail.
     whitelabel:

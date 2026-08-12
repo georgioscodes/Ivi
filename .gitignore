@@ -13,3 +13,15 @@ override.tf.json
 terraform.rc
 *.tfvars
 !example.tfvars
+
+# Java / Gradle
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/

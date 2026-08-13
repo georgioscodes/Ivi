@@ -129,8 +129,20 @@ val frontendTypecheck = tasks.register<NpmTask>("frontendTypecheck") {
     outputs.upToDateWhen { false }
 }
 
+val frontendTest = tasks.register<NpmTask>("frontendTest") {
+    group = "verification"
+    description = "Runs the frontend unit tests."
+
+    dependsOn(tasks.npmInstall)
+    npmCommand = listOf("run", "test")
+
+    inputs.dir(frontendDir.dir("src")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(frontendDir.file("vite.config.ts"))
+    outputs.upToDateWhen { false }
+}
+
 tasks.named("check") {
-    dependsOn(frontendTypecheck)
+    dependsOn(frontendTypecheck, frontendTest)
 }
 
 tasks.processResources {

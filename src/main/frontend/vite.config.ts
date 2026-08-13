@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
@@ -18,6 +19,12 @@ export default defineConfig({
     // Named for the compliance conversation rather than for debugging: source maps of an
     // Article 9 application are shipped to every browser that asks. Turn on locally if needed.
     sourcemap: false,
+  },
+  test: {
+    // happy-dom rather than jsdom: these tests need document.cookie, fetch and URL, and it is
+    // the faster of the two by a wide margin for that much.
+    environment: 'happy-dom',
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
   server: {
     port: 5173,

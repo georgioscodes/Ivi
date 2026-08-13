@@ -1,0 +1,127 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.state--loading {
+  flex-direction: row;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.state__spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--grey-200);
+  border-top-color: var(--brand-taupe);
+  border-radius: var(--radius-full);
+  animation: state-spin 700ms linear infinite;
+}
+
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * With reduced motion the spinner would sit frozen and read as a broken image, so it becomes a
+ * pulse instead. Something still has to say "working".
+ */
+@media (prefers-reduced-motion: reduce) {
+  .state__spinner {
+    animation: state-pulse 1.4s ease-in-out infinite !important;
+    border-top-color: var(--grey-200);
+    background: var(--brand-taupe);
+  }
+}
+
+@keyframes state-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.state__title {
+  font-weight: 600;
+}
+
+.state__hint {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.state--empty {
+  color: var(--ink);
+  background: var(--grey-50);
+  border-radius: var(--radius-lg);
+}
+
+/*
+ * The error token as a border and as ink on a pale fill — never as a background with text on top.
+ * --error takes white text, but the palette's rule is dark ink on light fills, and an alert that
+ * inverts the rest of the interface reads as a different application.
+ */
+.state--error {
+  border: 1px solid var(--error);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: #fbf3f2;
+  color: var(--ink);
+  text-align: start;
+  align-items: flex-start;
+}
+
+.state__action {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+}
+
+.state__action:hover {
+  background: var(--grey-50);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skeleton {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+.skeleton__row {
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--grey-100), var(--grey-50), var(--grey-100));
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton__row:last-child {
+  width: 60%;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

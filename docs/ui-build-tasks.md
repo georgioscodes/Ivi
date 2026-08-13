@@ -82,17 +82,33 @@ Two things this turned up. Permitting only `GET` on the shell gave every uptime 
 entry point declared `ISO-8859-1`, which cannot represent a single Greek character; the messages
 are ASCII today, so nothing had broken yet.
 
-## Block 1 — The API boundary
+## Block 1 — The API boundary ✅
 
-- [ ] Typed API client generated from or mirrored against the DTOs
-- [ ] **CSRF**: read `XSRF-TOKEN`, echo as `X-XSRF-TOKEN` on every write. Without it every write
-      is a 403
-- [ ] TanStack Query setup: query keys per resource, mutation helpers that replace cache from the
-      response rather than refetching
-- [ ] Session bootstrap via `GET /practitioner/me`
-- [ ] Global handling: 401 → login, 409 → conflict prompt, 429 → lockout message, 5xx → error state
-- [ ] `ErrorResponse.errors` mapped onto form fields
-- [ ] Shared loading, empty and error components
+- [x] Typed API client mirrored against the DTOs — see the drift note below
+- [x] **CSRF**: read `XSRF-TOKEN`, echo as `X-XSRF-TOKEN` on every write. Spring Security 6 defers
+      token generation, so a first write after a hard reload can find no cookie; the client mints
+      one with a cheap GET rather than failing
+- [x] TanStack Query setup: query keys per resource, `staleTime: 0` because caching a nutrient
+      total reintroduces exactly the disagreement this architecture exists to prevent
+- [x] Session bootstrap via `GET /practitioner/me`, where a 401 means "nobody" rather than a failure
+- [x] Global handling: 401 → session cleared and cache emptied, 409 → conflict, 429 → lockout,
+      5xx → error state with the server's text discarded
+- [x] `ErrorResponse.errors` mapped onto form fields
+- [x] Shared loading, skeleton, empty and error components
+
+Covered by 24 frontend unit tests, wired into `gradle check` alongside `tsc --noEmit`. Verified
+against the running jar in a browser: signed-out and signed-in states, a write rejected without a
+CSRF token and accepted with one, and per-field validation messages arriving in the shape a form
+needs.
+
+One defect found. `POST /practitioner/registration` returns the new practitioner but establishes
+no session, so writing its response into the session cache produced a signed-in shell whose every
+request would 401. Registration now signs in as a second step, using the password already in hand.
+
+**Known drift risk.** The TypeScript types are hand-written against the Java records. Generating
+them needs an OpenAPI document, and producing one needs the application booted against Postgres,
+which would make the frontend build depend on a database. Worth revisiting if the types start
+disagreeing with the server in practice.
 
 ## Block 2 — Authentication
 

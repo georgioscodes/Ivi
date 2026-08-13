@@ -35,6 +35,14 @@ dependencies {
     // Sessions are stored in Postgres, not Redis: revocable without a second component.
     implementation("org.springframework.session:spring-session-jdbc")
 
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+
+    // HTML -> PDF rather than programmatic drawing: Phase 1 makes the print layout
+    // user-configurable, and parameterising a template is tractable where parameterising
+    // imperative drawing code is not.
+    implementation("io.github.openhtmltopdf:openhtmltopdf-core:1.1.22")
+    implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.22")
+
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")

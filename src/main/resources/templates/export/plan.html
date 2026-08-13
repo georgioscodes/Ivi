@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="el">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${plan.name}">Διατροφικό πλάνο</title>
+    <style>
+        /*
+         * The font is registered programmatically by PlanPdfRenderer and named here.
+         * Everything inherits from body: any element falling back to a base-14 font would
+         * render Greek as blank glyphs.
+         */
+        * { font-family: "DejaVu Sans", sans-serif; }
+
+        @page { size: A4; margin: 18mm 15mm; }
+
+        body {
+            font-size: 10pt;
+            color: #2b2320;          /* ink */
+            margin: 0;
+        }
+
+        .masthead {
+            border-bottom: 2px solid #a18276;   /* brand taupe */
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+        }
+        .practice { font-size: 14pt; font-weight: bold; }
+        .plan-name { font-size: 12pt; margin-top: 2px; }
+        .client { color: #5c4f49; margin-top: 4px; }
+
+        .targets {
+            background-color: #f1d6b8;          /* brand peach, as a fill with dark ink on top */
+            padding: 8px 10px;
+            margin-bottom: 14px;
+        }
+        .targets span { margin-right: 14px; }
+
+        .day { margin-bottom: 16px; }
+        .day-title {
+            background-color: #b9d2b1;          /* brand sage */
+            padding: 5px 8px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        .meal { margin-top: 8px; }
+        .meal-title { font-weight: bold; color: #5c4f49; margin-bottom: 3px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            border-bottom: 1px solid #dac6b5;   /* brand sand */
+            padding: 3px 4px;
+            font-size: 9pt;
+            color: #5c4f49;
+        }
+        td { padding: 3px 4px; border-bottom: 1px solid #f0ebe6; }
+        td.num, th.num { text-align: right; }
+
+        .day-total {
+            margin-top: 6px;
+            padding: 4px 8px;
+            background-color: #dac6b5;          /* brand sand */
+            font-weight: bold;
+        }
+
+        .analysis { margin-top: 18px; page-break-inside: avoid; }
+        .analysis h2 { font-size: 12pt; margin-bottom: 6px; }
+
+        .notes { margin-top: 16px; page-break-inside: avoid; white-space: pre-wrap; }
+
+        .footer {
+            position: running(footer);
+            font-size: 8pt;
+            color: #5c4f49;
+        }
+    </style>
+</head>
+<body>
+
+<div class="masthead">
+    <div class="practice" th:text="${practiceName}">Διαιτολογικό γραφείο</div>
+    <div class="plan-name" th:text="${plan.name}">Πλάνο</div>
+    <div class="client">
+        <span th:text="${clientName}">Πελάτης</span>
+        <span th:if="${issuedOn}" th:text="' — ' + ${issuedOn}"></span>
+    </div>
+</div>
+
+<div class="targets">
+    <span th:text="'Ενέργεια: ' + ${plan.targets.energyKcal} + ' kcal'">Ενέργεια</span>
+    <span th:text="'Πρωτεΐνες: ' + ${plan.targets.proteinG} + ' g'">Πρωτεΐνες</span>
+    <span th:text="'Υδατάνθρακες: ' + ${plan.targets.carbohydrateG} + ' g'">Υδατάνθρακες</span>
+    <span th:text="'Λίπη: ' + ${plan.targets.fatG} + ' g'">Λίπη</span>
+</div>
+
+<div class="day" th:each="day : ${plan.days}">
+    <div class="day-title" th:text="${dayLabels.get(day.dayIndex)}">Ημέρα</div>
+
+    <div class="meal" th:each="meal : ${day.meals}" th:if="${!meal.items.isEmpty()}">
+        <div class="meal-title">
+            <span th:text="${mealLabels.get(meal.mealType)}">Γεύμα</span>
+            <span th:if="${meal.timeLabel}" th:text="' (' + ${meal.timeLabel} + ')'"></span>
+        </div>
+        <table>
+            <thead>
+            <tr>
+                <th>Τρόφιμο</th>
+                <th>Μερίδα</th>
+                <th class="num">Ποσότητα</th>
+                <th class="num" th:if="${showQuantities}">Γραμμάρια</th>
+                <th class="num" th:if="${showAnalysis}">kcal</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${meal.items}">
+                <td th:text="${item.name}">Τρόφιμο</td>
+                <td th:text="${item.portionLabel}">μερίδα</td>
+                <td class="num" th:text="${item.quantity}">1</td>
+                <td class="num" th:if="${showQuantities}" th:text="${item.totalGrams}">100</td>
+                <td class="num" th:if="${showAnalysis}" th:text="${item.energyKcal}">0</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="day-total" th:if="${showAnalysis}">
+        <span th:text="'Σύνολο ημέρας: ' + ${day.totals.energyKcal} + ' kcal'">Σύνολο</span>
+        <span th:text="' — Π ' + ${day.totals.proteinG} + ' g'"></span>
+        <span th:text="' Υ ' + ${day.totals.carbohydrateG} + ' g'"></span>
+        <span th:text="' Λ ' + ${day.totals.fatG} + ' g'"></span>
+        <span th:text="' (' + ${day.targetPercent.energyKcal} + '% του στόχου)'"></span>
+    </div>
+</div>
+
+<div class="analysis" th:if="${showAnalysis}">
+    <h2>Ανάλυση διατροφικού πλάνου</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Μέσος όρος ημέρας</th>
+            <th class="num">Ενέργεια</th>
+            <th class="num">Πρωτεΐνες</th>
+            <th class="num">Υδατάνθρακες</th>
+            <th class="num">Λίπη</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td th:text="${plan.days.size()} + ' ημέρες'">Ημέρες</td>
+            <td class="num" th:text="${plan.dailyAverage.energyKcal} + ' kcal'">0</td>
+            <td class="num" th:text="${plan.dailyAverage.proteinG} + ' g'">0</td>
+            <td class="num" th:text="${plan.dailyAverage.carbohydrateG} + ' g'">0</td>
+            <td class="num" th:text="${plan.dailyAverage.fatG} + ' g'">0</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="notes" th:if="${plan.notes}">
+    <h2 style="font-size: 12pt;">Σημειώσεις</h2>
+    <span th:text="${plan.notes}">Σημειώσεις</span>
+</div>
+
+</body>
+</html>

@@ -41,7 +41,7 @@ public class ClientController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponse> getById(@PathVariable Long id) {
-        return clientService.findById(id)
+        return clientService.viewById(id)
             .map(ResponseEntity::ok)
             .orElseThrow(() -> new ResourceNotFoundException("Client", id));
     }

@@ -1,5 +1,7 @@
 package com.ivi.app.export.service;
 
+import com.ivi.app.audit.model.AuditAction;
+import com.ivi.app.audit.service.AuditService;
 import com.ivi.app.client.dto.ClientResponse;
 import com.ivi.app.client.service.ClientService;
 import com.ivi.app.plan.dto.PlanResponse;
@@ -53,6 +55,7 @@ public class PlanExportService {
     private final PractitionerService practitionerService;
     private final TemplateEngine templateEngine;
     private final PlanPdfRenderer renderer;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public Optional<byte[]> renderPlan(Long planId) {
@@ -64,6 +67,10 @@ public class PlanExportService {
             String practiceName = practitionerService.findById(CurrentPractitioner.requireId())
                 .map(this::practiceNameOf)
                 .orElse("");
+
+            // EXPORT rather than READ: a downloaded PDF leaves the system's control entirely,
+            // which is a materially different event from viewing a record on screen.
+            auditService.record(AuditAction.EXPORT, "PLAN_PDF", plan.id(), plan.clientId());
 
             return renderer.render(buildHtml(plan, clientName, practiceName), "classpath:/templates/");
         });

@@ -55,6 +55,16 @@ server:
   compression:
     enabled: true
 
+ivi:
+  http-logging:
+    enabled: true
+    # Bodies carry names, weights, blood markers and clinical notes — Article 9 data — and on the
+    # auth endpoints, passwords. Enabling this copies the health record into the log stream, which
+    # has different retention and access control from the database. Local development against
+    # fabricated data only.
+    include-bodies: ${HTTP_LOG_BODIES:false}
+    max-body-chars: 2000
+
 management:
   endpoints:
     web:

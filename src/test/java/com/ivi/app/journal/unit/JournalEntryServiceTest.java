@@ -1,5 +1,6 @@
 package com.ivi.app.journal.unit;
 
+import com.ivi.app.audit.service.AuditService;
 import com.ivi.app.client.dto.ClientResponse;
 import com.ivi.app.client.service.ClientService;
 import com.ivi.app.journal.dto.JournalEntryCreateRequest;
@@ -43,11 +44,14 @@ class JournalEntryServiceTest {
     @Mock
     private ClientService clientService;
 
+    @Mock
+    private AuditService auditService;
+
     private JournalEntryService journalService;
 
     @BeforeEach
     void setUp() {
-        journalService = new JournalEntryService(journalRepository, clientService);
+        journalService = new JournalEntryService(journalRepository, clientService, auditService);
         SecurityContextHolder.getContext().setAuthentication(
             new UsernamePasswordAuthenticationToken(
                 new AuthenticatedPractitioner(PRACTITIONER_ID, "j@example.gr", null, true),

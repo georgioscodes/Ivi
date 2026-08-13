@@ -1,5 +1,6 @@
 package com.ivi.app.measurement.unit;
 
+import com.ivi.app.audit.service.AuditService;
 import com.ivi.app.client.dto.ClientResponse;
 import com.ivi.app.client.service.ClientService;
 import com.ivi.app.measurement.dto.MeasurementSeriesResponse;
@@ -47,13 +48,17 @@ class MeasurementSeriesTest {
     @Mock
     private ClientService clientService;
 
+    @Mock
+    private AuditService auditService;
+
     private MeasurementService measurementService;
     private MeasurementTypeEntity weight;
     private MeasurementTypeEntity height;
 
     @BeforeEach
     void setUp() {
-        measurementService = new MeasurementService(measurementRepository, typeRepository, clientService);
+        measurementService = new MeasurementService(
+            measurementRepository, typeRepository, clientService, auditService);
 
         SecurityContextHolder.getContext().setAuthentication(
             new UsernamePasswordAuthenticationToken(

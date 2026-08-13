@@ -1,5 +1,6 @@
 package com.ivi.app.measurement.service;
 
+import com.ivi.app.audit.service.AuditService;
 import com.ivi.app.client.service.ClientService;
 import com.ivi.app.measurement.dto.MeasurementBatchRequest;
 import com.ivi.app.measurement.dto.MeasurementRecordRequest;
@@ -40,6 +41,7 @@ public class MeasurementService {
     private final MeasurementRepository measurementRepository;
     private final MeasurementTypeRepository typeRepository;
     private final ClientService clientService;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public List<MeasurementTypeResponse> types() {
@@ -98,6 +100,8 @@ public class MeasurementService {
         Long practitionerId = CurrentPractitioner.requireId();
         requireOwnClient(clientId);
 
+        auditService.recordClientRead("MEASUREMENT_SERIES", null, clientId);
+
         MeasurementTypeEntity type = requireType(typeCode);
         List<MeasurementEntity> readings = measurementRepository
             .findAllByPractitionerIdAndClientIdAndTypeCodeOrderByRecordedOnAsc(
@@ -133,6 +137,8 @@ public class MeasurementService {
     public MeasurementSummaryResponse summary(Long clientId) {
         Long practitionerId = CurrentPractitioner.requireId();
         requireOwnClient(clientId);
+
+        auditService.recordClientRead("MEASUREMENT_SUMMARY", null, clientId);
 
         List<MeasurementEntity> all =
             measurementRepository.findAllByPractitionerIdAndClientId(practitionerId, clientId);

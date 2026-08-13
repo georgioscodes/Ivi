@@ -1,5 +1,6 @@
 package com.ivi.app.journal.service;
 
+import com.ivi.app.audit.service.AuditService;
 import com.ivi.app.client.service.ClientService;
 import com.ivi.app.journal.dto.JournalEntryCreateRequest;
 import com.ivi.app.journal.dto.JournalEntryResponse;
@@ -26,6 +27,7 @@ public class JournalEntryService {
 
     private final JournalEntryRepository journalRepository;
     private final ClientService clientService;
+    private final AuditService auditService;
 
     public JournalEntryResponse create(JournalEntryCreateRequest request) {
         Long practitionerId = CurrentPractitioner.requireId();
@@ -44,14 +46,20 @@ public class JournalEntryService {
 
     @Transactional(readOnly = true)
     public Optional<JournalEntryResponse> findById(Long id) {
-        return journalRepository.findByIdAndPractitionerId(id, CurrentPractitioner.requireId())
+        Optional<JournalEntryResponse> entry = journalRepository
+            .findByIdAndPractitionerId(id, CurrentPractitioner.requireId())
             .map(JournalEntryMapper::toDto);
+        entry.ifPresent(found ->
+            auditService.recordClientRead("JOURNAL_ENTRY", found.id(), found.clientId()));
+        return entry;
     }
 
     @Transactional(readOnly = true)
     public PagedResponse<JournalEntryResponse> findForClient(Long clientId, String term, Pageable pageable) {
         Long practitionerId = CurrentPractitioner.requireId();
         requireOwnClient(clientId);
+
+        auditService.recordClientRead("JOURNAL", null, clientId);
 
         Page<JournalEntryEntity> page = (term == null || term.isBlank())
             ? journalRepository.findAllByPractitionerIdAndClientIdOrderByEntryDateDesc(

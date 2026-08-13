@@ -2,6 +2,7 @@ package com.ivi.app.shared.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.ResponseEntity;
@@ -78,6 +79,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), "Access denied");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    /**
+     * Two people, or two devices, edited the same plan at once.
+     *
+     * <p>409 rather than a silent overwrite: the plan builder is a long editing session and the
+     * product deliberately supports having it open on a laptop and a tablet, so last-write-wins
+     * would quietly discard whichever save landed first.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            "This was changed elsewhere while you were editing. Reload and reapply your change."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

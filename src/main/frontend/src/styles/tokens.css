@@ -1,0 +1,108 @@
+/*
+ * Design tokens. The source of truth for the values and their constraints is
+ * docs/ui-palette.md — read it before adding or changing a colour here.
+ *
+ * The two rules that bite most often:
+ *   1. Brand colours are fills. Dark ink goes on top of them. Never the reverse, and never
+ *      white text on a brand colour.
+ *   2. The brand five cannot encode category or chart series. Sage and sand differ by 1.01
+ *      in contrast. A categorical scale is defined separately when the charts land.
+ */
+
+:root {
+  /* --- Brand: surfaces and fills only ------------------------------------------------ */
+  --brand-taupe: #a18276;
+  --brand-sage: #b9d2b1;
+  --brand-sand: #dac6b5;
+  --brand-peach: #f1d6b8;
+  --brand-pink: #fbacbe;
+
+  /* --- Ink and surface --------------------------------------------------------------- */
+  --surface: #fdfbf9;         /* warm white, sits with the palette */
+  --surface-raised: #ffffff;  /* cards lifted off the page */
+  --ink: #2b2320;             /* 14.91 on surface, AAA */
+  --ink-muted: #5c4f49;       /* 7.62 on surface, AAA */
+
+  /*
+   * --- Warm neutrals ------------------------------------------------------------------
+   * Tinted rather than pure grey, so borders next to sand and peach do not read as cold.
+   * Ratios measured against --surface:
+   *
+   *   50   1.08   subtle fill, row hover
+   *   100  1.21   divider
+   *   200  1.41   decorative border, disabled fill
+   *   300  1.86   border where nothing depends on seeing it
+   *   400  3.07   input and control boundaries — meets 1.4.11's 3:1 for UI components
+   *   500  4.61   placeholder and de-emphasised text — meets AA for body text
+   *   600  6.45   secondary text
+   *   700  9.74   near-ink
+   *
+   * 400 and 500 are the two that carry a requirement; the rest are free to be tuned by eye.
+   */
+  --grey-50: #f6f2ef;
+  --grey-100: #ece5e0;
+  --grey-200: #ded4cc;
+  --grey-300: #c6b9af;
+  --grey-400: #9d8e84;
+  --grey-500: #7f7067;
+  --grey-600: #665a53;
+  --grey-700: #4a403b;
+
+  /* --- Semantic ----------------------------------------------------------------------- */
+  /* The brand palette has no way to say "wrong", and the plan builder has to. */
+  --error: #a03530;
+  --warning: #8a5a1a;
+  --success: #3f6b45;
+  --info: #3a5f7d;
+
+  /* --- Applied roles ------------------------------------------------------------------ */
+  /* Prefer these over reaching for a raw scale value; they carry the contrast requirement. */
+  --border: var(--grey-200);          /* decorative separation */
+  --border-control: var(--grey-400);  /* anything with a boundary the user must perceive */
+  --text-placeholder: var(--grey-500);
+  --text-secondary: var(--ink-muted);
+  --focus-ring: var(--brand-taupe);
+
+  /* --- Type --------------------------------------------------------------------------- */
+  /*
+   * Inter Variable, self-hosted through npm rather than loaded from a font CDN: a CDN request
+   * sends every practitioner's IP to a third party on every page load, which is a transfer we
+   * have no basis for. Greek coverage is verified by a test, not assumed.
+   */
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.55;
+
+  /* --- Space -------------------------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* --- Shape and depth ---------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+
+  /* Warm-tinted shadows; a neutral black shadow greys the palette out. */
+  --shadow-sm: 0 1px 2px rgb(43 35 32 / 0.06);
+  --shadow-md: 0 2px 8px rgb(43 35 32 / 0.08);
+  --shadow-lg: 0 8px 24px rgb(43 35 32 / 0.12);
+
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+}

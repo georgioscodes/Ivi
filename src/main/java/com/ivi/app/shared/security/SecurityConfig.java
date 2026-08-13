@@ -2,10 +2,12 @@ package com.ivi.app.shared.security;
 
 import com.ivi.app.shared.exception.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +21,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +31,40 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
+
+    /**
+     * Any GET that is not an API or actuator call: the HTML shell, the fingerprinted bundles, the
+     * fonts, and every client-side route that falls back to the shell.
+     *
+     * <p>Written as a rule rather than a list of paths on purpose. A list would have to be edited
+     * every time the client gains a route, and the failure when someone forgets is a 401 JSON
+     * body rendered as a blank page — which looks like a frontend bug and is not one.
+     *
+     * <p>The inversion is what keeps it safe: this permits by exclusion of {@code /api}, so a new
+     * endpoint is authenticated by default and only static content can ever fall through here.
+     *
+     * <p>Public so the boundary it draws can be asserted directly in a unit test rather than
+     * inferred from a filter chain that needs a database to start.
+     */
+    public static final RequestMatcher APP_SHELL = request ->
+        isRead(request.getMethod())
+            && !pathOf(request).startsWith("/api/")
+            && !pathOf(request).startsWith("/actuator/");
+
+    /**
+     * HEAD as well as GET. Omitting it made every uptime check, proxy revalidation and link
+     * checker receive a 401 for a page that is public — which reads as an outage rather than
+     * as a configuration error, because the browser path kept working.
+     */
+    private static boolean isRead(String method) {
+        return HttpMethod.GET.matches(method) || HttpMethod.HEAD.matches(method);
+    }
+
+    private static String pathOf(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        return contextPath.isEmpty() ? uri : uri.substring(contextPath.length());
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -61,6 +100,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/practitioner/registration").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                // The compiled frontend. It has to be reachable before login, because it is what
+                // renders the login form. It contains no client data — every value on screen is
+                // fetched from an endpoint below, and those stay authenticated.
+                .requestMatchers(APP_SHELL).permitAll()
                 .anyRequest().authenticated()
             )
 
@@ -100,7 +143,11 @@ public class SecurityConfig {
     private void writeError(HttpServletResponse response, HttpStatus status, String message)
             throws java.io.IOException {
         response.setStatus(status.value());
+        // Charset stated explicitly. Without it the servlet writer declares ISO-8859-1, which
+        // cannot represent a single Greek character — and the messages this application returns
+        // are read by Greek-speaking practitioners.
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         objectMapper.writeValue(
             response.getWriter(),
             new ErrorResponse(status.value(), message)

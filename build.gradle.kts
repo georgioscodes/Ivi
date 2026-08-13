@@ -1,7 +1,10 @@
+import com.github.gradle.node.npm.task.NpmTask
+
 plugins {
     java
     id("org.springframework.boot") version "3.4.2"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 group = "com.ivi"
@@ -69,4 +72,70 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// --- Frontend -----------------------------------------------------------------------------
+//
+// React + TypeScript + Vite under src/main/frontend, compiled into this jar's static resources.
+// One artifact: the UI is versioned, built and deployed with the API that serves it, so there is
+// no window in which a deployed frontend is talking to a backend it was not built against.
+//
+// Node is downloaded and pinned rather than taken from the PATH, so the build does not depend on
+// what happens to be installed on a developer's machine or a CI image.
+
+val frontendDir = layout.projectDirectory.dir("src/main/frontend")
+val frontendDist = layout.buildDirectory.dir("frontend")
+
+node {
+    version = "22.14.0"
+    download = true
+    nodeProjectDir = frontendDir
+    // Install from the lockfile. `npm install` would silently resolve newer transitive versions,
+    // which makes a build irreproducible.
+    npmInstallCommand = "ci"
+}
+
+val frontendBuild = tasks.register<NpmTask>("frontendBuild") {
+    group = "build"
+    description = "Compiles the React frontend into build/frontend."
+
+    dependsOn(tasks.npmInstall)
+    npmCommand = listOf("run", "build")
+
+    // Declared so an unchanged frontend is skipped. Without these Vite re-runs on every backend
+    // change, which is most of them.
+    inputs.dir(frontendDir.dir("src")).withPathSensitivity(PathSensitivity.RELATIVE)
+    // public/ is copied verbatim into the bundle. Left out of this list, a changed favicon or
+    // a new static file looks up-to-date and never reaches the jar.
+    inputs.dir(frontendDir.dir("public")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(frontendDir.file("index.html"))
+    inputs.file(frontendDir.file("vite.config.ts"))
+    inputs.file(frontendDir.file("tsconfig.json"))
+    inputs.file(frontendDir.file("package.json"))
+    inputs.file(frontendDir.file("package-lock.json"))
+    outputs.dir(frontendDist)
+}
+
+val frontendTypecheck = tasks.register<NpmTask>("frontendTypecheck") {
+    group = "verification"
+    description = "Type-checks the frontend. Vite strips types without checking them."
+
+    dependsOn(tasks.npmInstall)
+    npmCommand = listOf("run", "typecheck")
+
+    inputs.dir(frontendDir.dir("src")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(frontendDir.file("tsconfig.json"))
+    inputs.file(frontendDir.file("vite.config.ts"))
+    outputs.upToDateWhen { false }
+}
+
+tasks.named("check") {
+    dependsOn(frontendTypecheck)
+}
+
+tasks.processResources {
+    dependsOn(frontendBuild)
+    from(frontendDist) {
+        into("static")
+    }
 }

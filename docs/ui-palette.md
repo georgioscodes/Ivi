@@ -105,8 +105,29 @@ These are deliberately desaturated to sit alongside the brand tones rather than 
 Note that `--success` is close in hue to `--brand-sage`: keep sage decorative and reserve the
 semantic green for state, or the two will be read as the same signal.
 
-A neutral grey scale for borders, dividers and disabled states is also still needed — warm-tinted
-to match, rather than pure grey.
+### Neutrals
+
+Warm-tinted rather than pure grey, so a border next to sand or peach does not read as cold.
+Measured against `--surface` (`#fdfbf9`):
+
+| Token | Hex | vs surface | Use |
+|---|---|---|---|
+| `--grey-50` | `#f6f2ef` | 1.08 | Subtle fill, row hover |
+| `--grey-100` | `#ece5e0` | 1.21 | Divider |
+| `--grey-200` | `#ded4cc` | 1.41 | Decorative border, disabled fill |
+| `--grey-300` | `#c6b9af` | 1.86 | Border where nothing depends on seeing it |
+| `--grey-400` | `#9d8e84` | **3.07** | Input and control boundaries |
+| `--grey-500` | `#7f7067` | **4.61** | Placeholder and de-emphasised text |
+| `--grey-600` | `#665a53` | 6.45 | Secondary text |
+| `--grey-700` | `#4a403b` | 9.74 | Near-ink |
+
+Only two of these carry a requirement, and both were tuned to clear it rather than chosen and
+hoped for. `--grey-400` meets the 3:1 that WCAG 1.4.11 asks of a UI component boundary — an input
+whose edge cannot be seen is an input that cannot be found. `--grey-500` meets 4.5:1 as body text,
+because "de-emphasised" is not the same as "optional to read". The rest are decorative and can be
+adjusted by eye.
+
+Implemented in `src/main/frontend/src/styles/tokens.css`.
 
 ## Rules
 

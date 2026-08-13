@@ -21,6 +21,11 @@ build/
 *.class
 out/
 
+# Frontend. package-lock.json is deliberately NOT ignored — the Gradle build runs `npm ci`,
+# which needs it, and a lockfile is what makes the build reproducible.
+node_modules/
+*.tsbuildinfo
+
 # IDE
 .idea/
 *.iml

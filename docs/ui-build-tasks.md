@@ -55,17 +55,32 @@ Improvised rather than deferred; revisit any of them if they prove wrong in prac
 
 ---
 
-## Block 0 — Foundation
+## Block 0 — Foundation ✅
 
-- [ ] Scaffold Vite + React + TypeScript under `src/main/frontend`
-- [ ] Wire `gradle-node-plugin`: downloaded Node, `npm ci`, Vite output copied to `static/` by
-      `processResources`, with `inputs`/`outputs` declared so unchanged frontends skip the build
-- [ ] `WebMvcConfigurer` forwarding non-`/api`, non-asset paths to `index.html`
-- [ ] Verify one jar serves both API and UI
-- [ ] Design tokens as CSS custom properties from `ui-palette.md`
-- [ ] **Author the neutral grey scale** — warm-tinted, still missing from the palette doc
-- [ ] Web font with verified Greek coverage including tonos and dialytika forms
-- [ ] Vite dev proxy to `:8080`
+- [x] Scaffold Vite + React + TypeScript under `src/main/frontend`
+- [x] Wire `gradle-node-plugin`: downloaded Node pinned to 22.14.0, `npm ci`, Vite output copied
+      to `static/` by `processResources`, with `inputs`/`outputs` declared so unchanged frontends
+      skip the build. `check` runs `tsc --noEmit`, since Vite strips types without checking them
+- [x] `WebMvcConfigurer` serving `index.html` for client routes — and deliberately *not* for
+      unmatched `/api` paths or missing assets, both of which stay 404
+- [x] Verify one jar serves both API and UI
+- [x] Design tokens as CSS custom properties from `ui-palette.md`
+- [x] **Author the neutral grey scale** — warm-tinted, eight steps. Two carry a requirement:
+      `--grey-400` at 3.07 for control boundaries, `--grey-500` at 4.61 for placeholder text
+- [x] Web font with verified Greek coverage including tonos and dialytika forms — Inter Variable,
+      self-hosted via npm rather than a font CDN, which would send every practitioner's IP to a
+      third party on each page load
+- [x] Vite dev proxy to `:8080`
+
+Verified against the running jar rather than by inspection: deep links, HEAD, cache headers
+(`immutable` on fingerprinted assets, `no-cache` on the shell), unauthenticated `/api` still 401,
+missing assets still 404, and a browser check that Greek tonos and dialytika render in Inter and
+not a fallback face. Block 9 makes that last check permanent.
+
+Two things this turned up. Permitting only `GET` on the shell gave every uptime check and proxy a
+401 while browsers kept working — the kind of failure that reads as an outage. And the security
+entry point declared `ISO-8859-1`, which cannot represent a single Greek character; the messages
+are ASCII today, so nothing had broken yet.
 
 ## Block 1 — The API boundary
 

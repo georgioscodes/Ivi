@@ -16,7 +16,6 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Logs every request and response at the boundary.
@@ -33,7 +32,8 @@ import java.util.regex.Pattern;
  * <ol>
  *   <li>bodies are logged only when explicitly enabled, and the default is off;</li>
  *   <li>the authentication paths never log a body, whatever that setting says;</li>
- *   <li>known credential-bearing JSON keys are redacted even inside a permitted body;</li>
+ *   <li>{@link SensitiveDataMasker} strips credentials outright and replaces names, addresses,
+ *       phone numbers and free clinical text inside any body that is logged;</li>
  *   <li>binary responses are described rather than dumped, so a PDF export does not put a
  *       client's whole diet plan into the logs as mangled bytes.</li>
  * </ol>
@@ -47,18 +47,11 @@ import java.util.regex.Pattern;
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class RequestResponseLoggingFilter extends OncePerRequestFilter {
 
-    /**
-     * Values for these JSON keys are replaced before anything is written. Matched
-     * case-insensitively on the key, so passwordConfirmation and currentPassword are caught too.
-     */
-    private static final Pattern SENSITIVE_JSON = Pattern.compile(
-        "(\"(?:[a-zA-Z]*(?:password|secret|token|credential|otp|pin)[a-zA-Z]*)\"\\s*:\\s*)\"[^\"]*\"",
-        Pattern.CASE_INSENSITIVE);
-
     private static final List<String> TEXTUAL_CONTENT_TYPES =
         List.of("application/json", "application/xml", "text/");
 
     private final HttpLoggingProperties properties;
+    private final SensitiveDataMasker masker;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -144,8 +137,8 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
                 + content.length + " bytes]";
         }
 
-        String body = new String(content, StandardCharsets.UTF_8);
-        String redacted = SENSITIVE_JSON.matcher(body).replaceAll("$1\"[REDACTED]\"");
+        // Masked before any length check, so truncation can never leave a half-masked value.
+        String redacted = masker.mask(new String(content, StandardCharsets.UTF_8));
 
         if (redacted.length() > properties.maxBodyChars()) {
             return redacted.substring(0, properties.maxBodyChars())

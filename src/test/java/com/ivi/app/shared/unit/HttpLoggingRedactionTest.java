@@ -2,10 +2,9 @@ package com.ivi.app.shared.unit;
 
 import com.ivi.app.shared.logging.HttpLoggingProperties;
 import com.ivi.app.shared.logging.RequestResponseLoggingFilter;
+import com.ivi.app.shared.logging.SensitiveDataMasker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -14,12 +13,12 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Redaction and body handling in the request/response filter.
+ * Filter-level behaviour: which requests are logged at all, whether bodies are captured, how
+ * binary and oversized payloads are handled.
  *
- * <p>Worth testing separately from the end-to-end run, because there the credentials were
- * protected by the path exclusion rather than by redaction. Redaction is the defence that has to
- * hold when a sensitive field turns up on an endpoint that <em>is</em> logged — a future password
- * change or token exchange somewhere other than {@code /auth}.
+ * <p>What masking does to a given field is proven in {@code SensitiveDataMaskerTest}. What this
+ * asserts is that the filter routes bodies through the masker at all, and that the structural
+ * defences around it hold.
  */
 class HttpLoggingRedactionTest {
 
@@ -27,38 +26,25 @@ class HttpLoggingRedactionTest {
 
     @BeforeEach
     void setUp() {
-        filter = new RequestResponseLoggingFilter(new HttpLoggingProperties(
-            true, true, 2000, null, null));
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @ValueSource(strings = {
-        "password", "Password", "newPassword", "currentPassword", "passwordConfirmation",
-        "token", "accessToken", "refreshToken", "secret", "clientSecret", "credential", "otp", "pin"
-    })
-    void shouldRedactTheValue_whenAKeyLooksLikeACredential(String key) {
-        // Given
-        String body = "{\"%s\":\"the-actual-secret\",\"fullName\":\"Ελένη\"}".formatted(key);
-
-        // When
-        String logged = bodyOf(body, "application/json");
-
-        // Then — the value goes, the key and the rest of the payload stay
-        assertThat(logged).doesNotContain("the-actual-secret");
-        assertThat(logged).contains("[REDACTED]");
-        assertThat(logged).contains("Ελένη");
+        filter = new RequestResponseLoggingFilter(
+            new HttpLoggingProperties(true, true, 2000, null, null),
+            new SensitiveDataMasker());
     }
 
     @Test
-    void shouldLeaveOrdinaryFieldsAlone_whenRedacting() {
-        // Given — clinical content is not a credential and must stay readable in the log
-        String body = "{\"fullName\":\"Ελένη Δ.\",\"notes\":\"Κλινική σημείωση\",\"weightKg\":77.9}";
+    void shouldApplyTheMasker_toBodiesItLogs() {
+        // Given — the per-key rules are proven in SensitiveDataMaskerTest; this checks only
+        // that the filter actually routes bodies through it rather than logging them raw.
+        String body = "{\"fullName\":\"Ελένη\",\"password\":\"secret-value\"}";
 
         // When
         String logged = bodyOf(body, "application/json");
 
         // Then
-        assertThat(logged).isEqualTo(body);
+        assertThat(logged)
+            .doesNotContain("Ελένη")
+            .doesNotContain("secret-value")
+            .contains("[REDACTED]");
     }
 
     @Test
@@ -106,7 +92,8 @@ class HttpLoggingRedactionTest {
     void shouldFilterNothing_whenLoggingIsDisabled() {
         // Given
         RequestResponseLoggingFilter disabled = new RequestResponseLoggingFilter(
-            new HttpLoggingProperties(false, false, 2000, null, null));
+            new HttpLoggingProperties(false, false, 2000, null, null),
+            new SensitiveDataMasker());
 
         // When / Then
         assertThat((Boolean) ReflectionTestUtils.invokeMethod(

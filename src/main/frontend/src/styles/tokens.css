@@ -55,6 +55,27 @@
   --success: #3f6b45;
   --info: #3a5f7d;
 
+  /*
+   * --- Interactive taupe ---------------------------------------------------------------
+   * Brand taupe carries dark ink at only 4.38:1 — AA for large text, but a 16px button label
+   * is not large text, and the hover state made it worse. So the primary control uses a tint
+   * derived from taupe rather than taupe itself.
+   *
+   * Lightening fixes the label and breaks the button's own outline against the page, which
+   * WCAG 1.4.11 wants at 3:1. Hence the separate border token: fill light enough to read on,
+   * edge dark enough to see. Measured with --ink on the fill, and the fill against --surface:
+   *
+   *   --action        #ad9084   ink 5.20   edge 2.87 (bordered)
+   *   --action-hover  #a68979   ink 4.75   edge 3.14
+   *   --action-border #8f7267              edge 4.26
+   *
+   * The pressed state is a shadow rather than a darker fill, because every fill dark enough to
+   * read as "pressed" drops the label back below 4.5.
+   */
+  --action: #ad9084;
+  --action-hover: #a68979;
+  --action-border: #8f7267;
+
   /* --- Applied roles ------------------------------------------------------------------ */
   /* Prefer these over reaching for a raw scale value; they carry the contrast requirement. */
   --border: var(--grey-200);          /* decorative separation */

@@ -110,11 +110,50 @@ them needs an OpenAPI document, and producing one needs the application booted a
 which would make the frontend build depend on a database. Worth revisiting if the types start
 disagreeing with the server in practice.
 
-## Block 2 — Authentication
+## Block 2 — Authentication ✅
 
-- [ ] Login, registration, logout
-- [ ] Protected routes with redirect-back
-- [ ] 429 lockout surfaced distinctly from wrong credentials
+- [x] Login, registration, logout
+- [x] Protected routes with redirect-back
+- [x] 429 lockout surfaced distinctly from wrong credentials — amber rather than red, its own
+      wording, and the submit button disabled, because the form should stop inviting the action
+      that caused it
+
+Verified in a browser against the running jar: a turned-away link resumes after sign-in, a
+signed-in practitioner is kept off `/login`, and five wrong passwords produce a wrong-password
+message where the sixth produces the lockout.
+
+Two things this turned up.
+
+**Two redirects raced.** The login page navigated to the intended destination on success while
+`GuestOnlyRoute` redirected to `/` as soon as the session landed in the cache. The second usually
+won, so a practitioner who followed a link signed in and arrived somewhere else — silently, and
+only sometimes. `GuestOnlyRoute` is now the only thing that decides where sign-in lands.
+
+**The catch-all route ran before authentication.** `*` redirecting to `/` meant an unknown path
+was rewritten before `ProtectedRoute` ever saw it, so the destination was gone by the time anyone
+signed in. It now lives inside the protected tree and renders a not-found screen, which keeps the
+URL.
+
+### Owed: the server speaks English
+
+There are 140 bean-validation messages in the Java code and they are all English — as are
+"Invalid email or password" and the lockout text. They reach a Greek-speaking practitioner
+unchanged.
+
+Block 2 covers the auth paths specifically: sign-in maps 401 and 429 to Greek itself, and the
+registration form mirrors the server's shape rules in Greek so the practitioner sees Greek for
+everything they are realistically going to hit. That is a patch over the auth screens, not a fix.
+
+The general answer is one of:
+
+1. **Translate the server's messages.** Mechanical, and makes the API Greek-only — including its
+   logs.
+2. **Add a stable `code` to `ErrorResponse`** and let the client own all copy. Cleanest, and the
+   only option that keeps the API language-neutral. Touches every handler.
+3. **Mirror each form's rules in Zod**, as registration does, and accept English on the paths
+   nobody hits.
+
+Worth deciding before Block 3 adds client forms, which is where most of the 140 live.
 
 ## Block 3 — Clients
 

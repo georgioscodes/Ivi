@@ -26,7 +26,11 @@ spring:
     locations: classpath:db/migration
 
   jackson:
-    default-property-inclusion: non_null
+    # Nulls are serialised rather than omitted. Several DTOs use null as a meaningful value —
+    # outOfRange is null when a measurement type defines no reference range, foodId is null once
+    # a food has been deleted — and dropping the key makes that indistinguishable from a field
+    # the client's version does not know about.
+    default-property-inclusion: always
 
   session:
     store-type: jdbc

@@ -54,10 +54,16 @@ class ArchitectureTest {
             .because("data access is declared through Spring Data interfaces")
             .allowEmptyShould(true);
 
+    /**
+     * Enums are excluded. The rule exists to keep mutable POJOs out of the public contract, and
+     * an enum is already immutable — {@code BmrEquation} and {@code Sex} are part of the
+     * nutrition contract and belong beside the records that carry them.
+     */
     @ArchTest
     static final ArchRule dtos_are_records =
         classes()
             .that().resideInAPackage("..dto..")
+            .and().areNotEnums()
             .should().beRecords()
             .because("DTOs are immutable record-based contracts")
             .allowEmptyShould(true);

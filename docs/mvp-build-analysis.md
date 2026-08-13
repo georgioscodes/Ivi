@@ -15,25 +15,38 @@ and a three-layer test pyramid. Everything below assumes those and does not rest
 Most of this build is ordinary CRUD. Three decisions are not, and getting them wrong is expensive
 to reverse. Settle these before writing the first module.
 
-### 1.1 Real-time progress bars are a frontend computation, not an API call
+### 1.1 Every displayed number comes from the server
 
 Feature #5 updates energy and macro totals as the practitioner adds foods and adjusts quantities.
-This is the product's core interaction and its stated competitive wedge — it has to feel instant.
+This is the product's core interaction and it has to feel responsive.
 
-A server round-trip per quantity change will not. A plan edit session involves hundreds of small
-adjustments; at 50–150 ms per call the builder feels like wading.
+**Decision: the browser computes no nutrient values at all.** Every figure on screen — item
+contribution, meal total, day total, percentage of target, weekly average — is rendered exactly as
+the API returned it. The plan endpoints already recompute the whole aggregate on every mutation and
+return it, so the client has nothing left to work out.
 
-**Recommendation.** When a food is added to a plan, the API returns that food's full nutrient
-vector per 100 g along with its portion definitions. The browser holds the working plan in memory
-and recomputes totals locally on every change. Persistence is debounced (~1 s) or explicit.
-The server recomputes authoritatively on save and returns the canonical totals.
+> **This reverses an earlier recommendation in this document.** The first version had the browser
+> hold the working plan and recompute locally for instant feedback, with the server authoritative
+> on save. That would have put nutrient arithmetic in TypeScript *and* Java, and the two would have
+> had to agree digit for digit — because the visible failure is the total changing the moment the
+> practitioner saves, which discredits every other number on the screen. One implementation cannot
+> disagree with itself.
 
-Consequences to accept up front:
-- Nutrient arithmetic exists **twice** — TypeScript and Java. Rounding must agree exactly.
-  Pin the rules once (below) and write the same fixture set against both.
-- The `PlanItem` payload carries nutrients, so it is fatter than a normal reference DTO. Fine.
-- The server is the source of truth. The client's number is a preview; a mismatch on save is a bug
-  to surface, not to silently reconcile.
+What this costs, and why it is affordable:
+
+- **A round trip per committed edit.** Measured locally, adding an item to a plan takes 50–73 ms
+  end to end. Quantity input is debounced and committed on pause or blur rather than per keystroke,
+  so the traffic is per *edit*, not per character.
+- **Mutations return the whole plan.** Adding one food moves that meal's totals, the day's totals,
+  the day's percentage of target and the plan's average, so a partial response would leave the
+  client recomputing the rest — which is the thing being avoided. For a seven-day plan the response
+  is tens of kilobytes; acceptable now, and the obvious optimisation later is a totals-only
+  projection rather than a return to client-side maths.
+- **No optimistic UI for numbers.** A pending edit shows as pending. It does not show a guessed
+  total that might be corrected a moment later.
+
+The rounding contract in `shared/util/Nutrients.java` remains the single definition, and now has
+only one implementation to be true to.
 
 ### 1.2 Split the nutrient model: macros as columns, micronutrients as rows
 

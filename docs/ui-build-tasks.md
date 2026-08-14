@@ -144,23 +144,38 @@ Block 2 covers the auth paths specifically: sign-in maps 401 and 429 to Greek it
 registration form mirrors the server's shape rules in Greek so the practitioner sees Greek for
 everything they are realistically going to hit. That is a patch over the auth screens, not a fix.
 
-The general answer is one of:
+**Decided: mirror each form's rules in Zod**, as the registration and client forms do, and accept
+English on the paths a practitioner will not realistically reach. No backend change.
 
-1. **Translate the server's messages.** Mechanical, and makes the API Greek-only — including its
-   logs.
-2. **Add a stable `code` to `ErrorResponse`** and let the client own all copy. Cleanest, and the
-   only option that keeps the API language-neutral. Touches every handler.
-3. **Mirror each form's rules in Zod**, as registration does, and accept English on the paths
-   nobody hits.
+The cost is duplication, and duplication drifts. Each schema names the Java record it mirrors and
+its tests assert the specific limits, so a server-side change that is not mirrored fails a test
+rather than reaching a practitioner as an English sentence. The two alternatives — translating the
+server's messages, or adding a stable `code` to `ErrorResponse` and letting the client own all
+copy — remain open if this gets unwieldy.
 
-Worth deciding before Block 3 adds client forms, which is where most of the 140 live.
+## Block 3 — Clients ✅
 
-## Block 3 — Clients
+- [x] List with search and pagination — search term and page live in the URL, so a result list
+      can be linked, bookmarked and returned to with the back button
+- [x] Create and edit forms, sharing one component so the fields and rules cannot drift apart
+- [x] Detail shell with tabs: overview, measurements, plans, journal. Routed links rather than
+      ARIA tabs — each panel is a route, so the URL is the state
+- [x] Delete with confirmation that names what goes with the client rather than asking "are you
+      sure", with the cancel button focused so Enter does not delete anybody
 
-- [ ] List with search and pagination
-- [ ] Create and edit forms
-- [ ] Detail shell with tabs: overview, measurements, plans, journal
-- [ ] Delete with confirmation
+Search is debounced at 300ms. Per-keystroke queries return out of order, so the list can settle
+on the results for "Ελ" after the results for "Ελένη" have already been shown.
+
+Blank optional fields are sent as absent rather than as `""`. The difference is visible in the
+record: an empty string overwrites a stored value, where omitting the key leaves it alone.
+
+The confirm dialog is the native `<dialog>` element rather than Radix, which the decisions table
+above names. `showModal()` brings focus trapping, Escape, the backdrop and page inertness with it,
+which is most of what a dialog library is for. Radix can still earn its place in the plan builder,
+where comboboxes and popovers need behaviour the platform has no answer for.
+
+Verified in a browser end to end: empty state, client-side validation in Greek, create, routed
+tabs, edit round trip, debounced search reflected in the URL, and delete with confirmation.
 
 ## Block 4 — Measurements
 

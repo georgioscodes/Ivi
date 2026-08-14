@@ -3,6 +3,13 @@ import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-do
 import { AppShell } from '@/app/AppShell';
 import { GuestOnlyRoute, ProtectedRoute } from '@/app/ProtectedRoute';
 import { Empty } from '@/components/states';
+import {
+  ClientDetailPage,
+  ClientOverviewTab,
+  PlaceholderTab,
+} from '@/features/client/ClientDetailPage';
+import { ClientFormPage } from '@/features/client/ClientFormPage';
+import { ClientListPage } from '@/features/client/ClientListPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { useSessionExpiryHandler } from '@/session/session';
@@ -36,7 +43,25 @@ export function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<ClientListPage />} />
+          <Route path="/client/new" element={<ClientFormPage mode="create" />} />
+          <Route path="/client/:clientId/edit" element={<ClientFormPage mode="edit" />} />
+
+          <Route path="/client/:clientId" element={<ClientDetailPage />}>
+            <Route index element={<ClientOverviewTab />} />
+            <Route
+              path="measurements"
+              element={<PlaceholderTab label="Οι μετρήσεις έρχονται στο επόμενο βήμα." />}
+            />
+            <Route
+              path="plans"
+              element={<PlaceholderTab label="Τα πλάνα διατροφής έρχονται σε επόμενο βήμα." />}
+            />
+            <Route
+              path="journal"
+              element={<PlaceholderTab label="Το ημερολόγιο έρχεται σε επόμενο βήμα." />}
+            />
+          </Route>
 
           {/*
             Inside the protected tree rather than a redirect to "/", so an unknown path is
@@ -79,14 +104,3 @@ function NotFound() {
   );
 }
 
-/** Placeholder. The client list takes this route in Block 3. */
-function Home() {
-  return (
-    <>
-      <h1 style={{ fontSize: 'var(--text-xl)' }}>Πελάτες</h1>
-      <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-2)' }}>
-        Η λίστα πελατών έρχεται στο επόμενο βήμα.
-      </p>
-    </>
-  );
-}

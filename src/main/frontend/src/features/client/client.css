@@ -1,0 +1,166 @@
+.page-title {
+  font-size: var(--text-xl);
+}
+
+.client-list__header,
+.client-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.client-list__search {
+  margin-bottom: var(--space-4);
+  max-width: 24rem;
+}
+
+.client-detail__meta {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.client-detail__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* --- Table ----------------------------------------------------------------------------------- */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.table th,
+.table td {
+  text-align: start;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table thead th {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--grey-50);
+  font-weight: 600;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--grey-50);
+}
+
+.table tbody th {
+  font-weight: 600;
+}
+
+.table a {
+  color: var(--ink);
+}
+
+/* --- Tabs ------------------------------------------------------------------------------------ */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.tabs__tab {
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  /* Reserved on every tab so the row does not shift by 2px when one becomes active. */
+  border-bottom: 2px solid transparent;
+}
+
+.tabs__tab:hover {
+  color: var(--ink);
+}
+
+/*
+ * Weight and an underline as well as colour. On a tab strip, colour alone is the difference
+ * between "which one am I on" and "I cannot tell", and it is the first thing to disappear for a
+ * colour-blind reader.
+ */
+.tabs__tab--active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--brand-taupe);
+}
+
+.tabs__panel {
+  padding-top: var(--space-5);
+}
+
+.tabs__placeholder {
+  color: var(--text-secondary);
+}
+
+/* --- Detail grid ----------------------------------------------------------------------------- */
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+}
+
+.detail-grid__wide {
+  grid-column: 1 / -1;
+}
+
+.detail-grid dt {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.detail-grid__notes {
+  white-space: pre-wrap;
+}
+
+/* --- Form ------------------------------------------------------------------------------------ */
+
+.client-form {
+  max-width: 40rem;
+  margin-top: var(--space-5);
+}
+
+.client-form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+
+.client-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.client-form textarea.field__input {
+  resize: vertical;
+  font-family: inherit;
+}

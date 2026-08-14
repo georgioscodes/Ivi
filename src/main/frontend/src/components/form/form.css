@@ -107,6 +107,20 @@
   background: var(--grey-50);
 }
 
+/*
+ * The one button that takes white text. --error is a semantic token, not one of the brand five,
+ * and white on it measures 6.89:1 — the palette's "no white text" rule is about the brand
+ * colours, whose contrast cannot support it.
+ */
+.button--destructive {
+  background: var(--error);
+  color: #ffffff;
+}
+
+.button--destructive:hover:not(:disabled) {
+  background: #8a2c28;
+}
+
 .button--link {
   background: none;
   border: none;

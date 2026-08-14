@@ -1,0 +1,31 @@
+.dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  background: var(--surface-raised);
+  color: var(--ink);
+  padding: var(--space-6);
+  max-width: 28rem;
+  width: calc(100vw - var(--space-6));
+}
+
+.dialog::backdrop {
+  /* Warm rather than neutral black, so the page behind does not turn grey. */
+  background: rgb(43 35 32 / 0.45);
+}
+
+.dialog__title {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+}
+
+.dialog__body {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-5);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

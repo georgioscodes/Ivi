@@ -177,15 +177,41 @@ where comboboxes and popovers need behaviour the platform has no answer for.
 Verified in a browser end to end: empty state, client-side validation in Greek, create, routed
 tabs, edit round trip, debounced search reflected in the URL, and delete with confirmation.
 
-## Block 4 — Measurements
+## Block 4 — Measurements ✅
 
-- [ ] Types from `GET /measurement/type`, grouped by category
-- [ ] Single entry, and **batch entry for a whole visit** — the form that saves real time
-- [ ] History table
-- [ ] Change chart from `GET /measurement/series`, which already returns the deltas
-- [ ] Summary card with the server-derived BMI, showing nothing when it is null rather than
+- [x] Types from `GET /measurement/type`, grouped by category
+- [x] Single entry, and **batch entry for a whole visit** — one date, one pass down the list, one
+      request. Empty inputs are not sent: a measurement that was not taken has no value, and
+      0 kg of muscle mass is not the same statement as silence
+- [x] History table
+- [x] Change chart from `GET /measurement/series`, which already returns the deltas
+- [x] Summary card with the server-derived BMI, showing nothing when it is null rather than
       computing a fallback
-- [ ] Out-of-range indication that is not colour alone
+- [x] Out-of-range indication that is not colour alone — symbol, word, then colour
+
+The chart uses a validated categorical scale, not the brand five. Colour was run through the
+lightness-band, chroma-floor, protan/deutan, normal-vision and contrast checks against `--surface`;
+slots 3 and 4 fall below 3:1, which obliges a visible label wherever they carry meaning. One
+series, so no legend — the heading names it. The y-axis is not zero-based: a weight series runs
+78–84 kg and anchoring at zero flattens exactly the change the chart exists to show.
+
+Three defects found while verifying.
+
+**`bmiCategory` was rendered raw.** The server sends stable codes — `UNDERWEIGHT`, `OVERWEIGHT` —
+which is the right thing for it to send and the wrong thing to put on screen. A practitioner
+reading "OVERWEIGHT" off a Greek interface with the client beside them is a defect. Now mapped,
+and an unknown band shows nothing rather than the code.
+
+**A stale figure was visible after saving.** The entry form closed as soon as the write returned,
+over a summary still showing pre-save values — a BMI of 28,3 on screen for a client the server
+already had at 27,7. That is the exact disagreement between screen and server that making the
+server authoritative was meant to eliminate. The invalidation promise is now returned from
+`onSuccess`, so the mutation stays pending until the refreshed figures have arrived.
+
+**History rows within a visit came back in arbitrary order.** The server sorts by date and
+nothing else, so weight sat above height on one date and below it on the next, which defeats
+comparing a measurement across visits by eye. Ordered within the page by the sequence
+`GET /measurement/type` returns.
 
 ## Block 5 — Nutrition targets
 

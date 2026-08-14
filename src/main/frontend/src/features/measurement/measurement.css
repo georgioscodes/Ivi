@@ -1,0 +1,225 @@
+.section-title {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+}
+
+.measurement__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+section + section,
+.chart-section + section {
+  margin-top: var(--space-6);
+}
+
+/* --- Summary --------------------------------------------------------------------------------- */
+
+.summary__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-3);
+}
+
+.summary__card {
+  display: grid;
+  gap: var(--space-1);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+/* Peach fill with dark ink on top, which is the palette's sanctioned direction. BMI is the one
+   derived figure on the card and is worth pulling out of the row. */
+.summary__card--bmi {
+  background: var(--brand-peach);
+  border-color: transparent;
+}
+
+.summary__label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.summary__card--bmi .summary__label,
+.summary__card--bmi .summary__meta {
+  /* --text-secondary is tuned for the page surface; on peach it needs the darker ink. */
+  color: var(--ink);
+  opacity: 0.75;
+}
+
+.summary__value {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  /* Tabular figures so a column of numbers aligns on the decimal rather than shuffling. */
+  font-variant-numeric: tabular-nums;
+}
+
+.summary__unit {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.summary__meta {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* --- Out of range ---------------------------------------------------------------------------- */
+
+/*
+ * Colour is the reinforcement, never the message: the symbol and the words carry it on their own.
+ * A red number and a black number are the same number to a colour-blind reader, and identical in
+ * a printout.
+ */
+.out-of-range {
+  display: inline-block;
+  margin-inline-start: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--error);
+  white-space: nowrap;
+}
+
+/* --- Chart ----------------------------------------------------------------------------------- */
+
+.chart-section {
+  margin-top: var(--space-6);
+}
+
+.chart-section__picker {
+  max-width: 20rem;
+  margin-bottom: var(--space-4);
+}
+
+.chart-section__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-section__totals strong {
+  color: var(--ink);
+}
+
+.chart-section__single {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.chart {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3) var(--space-3);
+}
+
+.chart__tooltip {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.chart__tooltip-date {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.chart__tooltip-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart__tooltip-change {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Entry forms ----------------------------------------------------------------------------- */
+
+.visit-form {
+  max-width: 52rem;
+}
+
+.visit-form__head {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.visit-form__date {
+  margin-bottom: 0;
+  max-width: 14rem;
+}
+
+.visit-form__hint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding-bottom: var(--space-2);
+}
+
+.visit-form__group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: var(--space-4) var(--space-5) var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.visit-form__legend {
+  font-weight: 600;
+  padding-inline: var(--space-2);
+}
+
+.visit-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-4);
+}
+
+.visit-form__cell {
+  margin-bottom: var(--space-2);
+}
+
+.visit-form__unit {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.visit-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.visit-form__count {
+  margin-inline-end: auto;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.visit-form textarea.field__input {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.measurement__note {
+  white-space: normal;
+  max-width: 20rem;
+  color: var(--text-secondary);
+}

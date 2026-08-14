@@ -76,6 +76,28 @@
   --action-hover: #a68979;
   --action-border: #8f7267;
 
+  /*
+   * --- Chart -----------------------------------------------------------------------------
+   * Deliberately not the brand five. Sage and sand differ by 1.01 in contrast and four of the
+   * five sit in one narrow luminance band, so they cannot tell one series from another — see
+   * docs/ui-palette.md.
+   *
+   * These four are a validated categorical scale, checked against --surface for lightness band,
+   * chroma floor, protan/deutan separation, normal-vision separation and contrast. Slots 3 and 4
+   * measure below 3:1 against the surface, which obliges a visible label or a table view
+   * wherever they carry meaning — the macro bars label every value, which satisfies it.
+   *
+   * Assign in order and never cycle. A fifth series is not a new hue.
+   */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+
+  /* Recessive: the data is the figure, the frame is not. */
+  --chart-grid: var(--grey-100);
+  --chart-axis: var(--grey-500);
+
   /* --- Applied roles ------------------------------------------------------------------ */
   /* Prefer these over reaching for a raw scale value; they carry the contrast requirement. */
   --border: var(--grey-200);          /* decorative separation */

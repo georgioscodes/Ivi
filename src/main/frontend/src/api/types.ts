@@ -99,3 +99,77 @@ export interface ClientCreateRequest {
 }
 
 export type ClientUpdateRequest = ClientCreateRequest;
+
+// --- Measurements ------------------------------------------------------------------------------
+
+/**
+ * `BigDecimal` on the server. Jackson serialises it as a JSON number, and JavaScript numbers
+ * cannot represent every decimal exactly — but these are body measurements to one or two places,
+ * far inside the range where a double is exact enough to display. Nothing here is arithmetic:
+ * every derived value, including BMI and every delta, is computed server-side and read as given.
+ */
+export interface MeasurementTypeResponse {
+  code: string;
+  labelEl: string;
+  labelEn: string;
+  unit: string;
+  category: 'ANTHROPOMETRIC' | 'BODY_COMPOSITION' | 'CIRCUMFERENCE' | (string & {});
+  /** Null when the type defines no reference range — which is every seeded type today. */
+  referenceMin: number | null;
+  referenceMax: number | null;
+  /** How many places to show. Not a hint: it is the type's precision. */
+  decimals: number;
+}
+
+export interface MeasurementResponse {
+  id: number;
+  clientId: number;
+  typeCode: string;
+  label: string;
+  unit: string;
+  value: number;
+  recordedOn: IsoDate;
+  notes: string | null;
+  /** Null when the type has no reference range — meaningfully different from "in range". */
+  outOfRange: boolean | null;
+}
+
+export interface MeasurementRecordRequest {
+  clientId: number;
+  typeCode: string;
+  value: number;
+  recordedOn?: IsoDate;
+  notes?: string;
+}
+
+export interface MeasurementBatchRequest {
+  clientId: number;
+  recordedOn?: IsoDate;
+  values: { typeCode: string; value: number }[];
+}
+
+export interface MeasurementSeriesPoint {
+  recordedOn: IsoDate;
+  value: number;
+  /** Server-computed. The client plots these; it does not subtract anything. */
+  changeFromPrevious: number | null;
+  changeFromFirst: number | null;
+}
+
+export interface MeasurementSeriesResponse {
+  typeCode: string;
+  label: string;
+  unit: string;
+  points: MeasurementSeriesPoint[];
+  firstValue: number | null;
+  latestValue: number | null;
+  totalChange: number | null;
+}
+
+export interface MeasurementSummaryResponse {
+  clientId: number;
+  latest: MeasurementResponse[];
+  /** Null unless both weight and height are known. Never computed here to fill the gap. */
+  bmi: number | null;
+  bmiCategory: string | null;
+}

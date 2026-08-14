@@ -10,6 +10,7 @@ import {
 } from '@/features/client/ClientDetailPage';
 import { ClientFormPage } from '@/features/client/ClientFormPage';
 import { ClientListPage } from '@/features/client/ClientListPage';
+import { MeasurementsTab } from '@/features/measurement/MeasurementsTab';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { useSessionExpiryHandler } from '@/session/session';
@@ -49,10 +50,7 @@ export function App() {
 
           <Route path="/client/:clientId" element={<ClientDetailPage />}>
             <Route index element={<ClientOverviewTab />} />
-            <Route
-              path="measurements"
-              element={<PlaceholderTab label="Οι μετρήσεις έρχονται στο επόμενο βήμα." />}
-            />
+            <Route path="measurements" element={<MeasurementsTab />} />
             <Route
               path="plans"
               element={<PlaceholderTab label="Τα πλάνα διατροφής έρχονται σε επόμενο βήμα." />}

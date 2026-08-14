@@ -129,6 +129,29 @@ adjusted by eye.
 
 Implemented in `src/main/frontend/src/styles/tokens.css`.
 
+### Chart series
+
+The brand five cannot encode a chart series — that is the whole point of the pairwise measurements
+above. Data uses a separate scale, assigned in order and never cycled:
+
+| Slot | Hex | Contrast vs surface |
+|---|---|---|
+| `--series-1` | `#2a78d6` | 4.28 |
+| `--series-2` | `#eb6834` | 3.10 |
+| `--series-3` | `#1baf7a` | 2.73 |
+| `--series-4` | `#eda100` | 2.10 |
+
+Checked against `--surface` for lightness band, chroma floor, protan/deutan separation
+(worst adjacent pair ΔE 9.1), normal-vision separation (ΔE 22.9) and contrast. Slots 3 and 4 fall
+below 3:1, which is permitted **only** alongside a visible label or a table view — the macro bars
+label every value, which satisfies it. A fifth series is not a new hue: fold into "other", facet,
+or use small multiples.
+
+Interactive taupe is a separate matter. `--brand-taupe` carries `--ink` at only 4.38:1 — AA for
+large text, but a 16px button label is not large text. The primary control therefore uses a
+derived tint (`--action` `#ad9084`, ink 5.20) with a darker border (`--action-border` `#8f7267`)
+so the button's own edge still clears the 3:1 that WCAG 1.4.11 asks of a UI component.
+
 ## Rules
 
 1. Brand colours are **fills and surfaces**. Dark ink goes on top of them.

@@ -1,0 +1,201 @@
+.calc {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* The derivation drops below the form rather than being squeezed; it is the part that gets read
+   aloud to a client, so it must not become a column of wrapped fragments. */
+@media (max-width: 60rem) {
+  .calc {
+    grid-template-columns: 1fr;
+  }
+}
+
+.calc__section {
+  margin-bottom: var(--space-6);
+}
+
+.calc__subheading {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.calc__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-4);
+}
+
+.calc__hint,
+.calc__waiting,
+.calc__note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.calc__note {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--grey-50);
+  border-radius: var(--radius-sm);
+}
+
+.calc__prefill {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--grey-50);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+/* --- Mode selection -------------------------------------------------------------------------- */
+
+.calc__modes {
+  display: grid;
+  gap: var(--space-2);
+  border: none;
+  margin-bottom: var(--space-5);
+}
+
+.calc__modes--inline {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.calc__mode {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+
+.calc__mode span {
+  display: grid;
+  gap: 2px;
+}
+
+/*
+ * The selected option is marked by a thicker, darker border and a tinted fill — not by colour
+ * alone. The radio itself is the real state; this is reinforcement.
+ */
+.calc__mode--on {
+  border-color: var(--action-border);
+  border-width: 2px;
+  padding: calc(var(--space-3) - 1px) calc(var(--space-4) - 1px);
+  background: var(--grey-50);
+}
+
+.calc__mode-note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.calc__percent-total {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
+.calc__percent-total--off {
+  color: var(--error);
+  font-weight: 600;
+}
+
+/* --- Derivation ------------------------------------------------------------------------------ */
+
+.calc__results {
+  position: sticky;
+  top: var(--space-4);
+  display: grid;
+  gap: var(--space-5);
+}
+
+.derivation {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+}
+
+.derivation__title {
+  font-size: var(--text-base);
+  margin-bottom: var(--space-4);
+}
+
+.derivation__steps {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.derivation__step {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.derivation__label {
+  display: grid;
+  gap: 1px;
+  font-size: var(--text-sm);
+}
+
+.derivation__note {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.derivation__value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.derivation__value--muted {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* The answer, set apart from the steps that produce it. */
+.derivation__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--brand-peach);
+  border-radius: var(--radius-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.derivation__total strong {
+  font-size: var(--text-xl);
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/*
+ * Amber, not red: the target is not invalid, and the practitioner may have chosen it deliberately.
+ * The symbol and the sentence carry the meaning; colour only reinforces it.
+ */
+.derivation__warning {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  background: #fdf6ec;
+  font-size: var(--text-sm);
+}

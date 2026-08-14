@@ -213,14 +213,43 @@ nothing else, so weight sat above height on one date and below it on the next, w
 comparing a measurement across visits by eye. Ordered within the page by the sequence
 `GET /measurement/type` returns.
 
-## Block 5 — Nutrition targets
+## Block 5 — Nutrition targets ✅
 
-- [ ] Calculator across all three entry paths the API accepts
-- [ ] Activity factor from `GET /nutrition/activity-level`, still accepting any value in range
-- [ ] Weight-goal input with the sign convention made obvious
-- [ ] Macro split by percentage or per-kilogram coefficients
-- [ ] Show the working — the API returns every intermediate value and a practitioner has to explain
-      the target to a client
+- [x] Calculator across all three entry paths the API accepts — anthropometrics, a stated basal
+      rate, or a stated target. A radio group, because the server takes exactly one and assembling
+      an invalid combination then reading about it is a worse way to find out
+- [x] Activity factor from `GET /nutrition/activity-level`, still accepting any value in range —
+      the endpoint offers suggestions, and reducing that to a six-item menu would take a judgement
+      away from the practitioner
+- [x] Weight-goal input with the sign convention made obvious
+- [x] Macro split by percentage or per-kilogram coefficients
+- [x] Show the working — laid out as a derivation, one line per step, so it reads the way it would
+      be explained across a desk
+
+Weight, height and age are seeded from the client's own record, once, and only into fields the
+practitioner has not touched. **Sex is not on the client record** and cannot be prefilled, so it is
+asked every time — all three equations are sex-specific and there is no default that would not be
+a guess about a person. Worth adding to the client record if this proves annoying.
+
+The coefficient path produces its own energy total, which can differ from the target derived
+above. The UI says so rather than hiding it: the practitioner chose to prescribe grams, and the
+two numbers answer different questions.
+
+**Added a clinical-safety notice.** A plausible-looking goal — −4 kg over 20 days — silently
+produced a 470 kcal/day target. The arithmetic is correct and the server accepts anything above
+zero. It now says when the target has fallen below the client's own basal rate. It does not block
+or disable: the practitioner is the clinician, and there are legitimate supervised reasons to go
+there. The alternative was software handing over a very-low-calorie target with the same blank
+face it uses for 2.100.
+
+Two defects found by looking at the rendered screen.
+
+**The activity factor rendered as `1.375`.** In Greek a full stop is the thousands separator, so
+the multiplier read as one thousand three hundred and seventy-five to anyone saying it out loud.
+
+**The derivation printed the same figure twice** in consecutive rows — the activity step showed
+the product, and the maintenance line below it showed the same product again, which reads as a
+repetition rather than a step. The activity row now shows the multiplier.
 
 ## Block 6 — Food catalogue
 

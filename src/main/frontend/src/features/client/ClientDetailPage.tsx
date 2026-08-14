@@ -11,6 +11,7 @@ import './client.css';
 const TABS = [
   { to: '', label: 'Επισκόπηση', end: true },
   { to: 'measurements', label: 'Μετρήσεις' },
+  { to: 'targets', label: 'Στόχοι' },
   { to: 'plans', label: 'Πλάνα' },
   { to: 'journal', label: 'Ημερολόγιο' },
 ];

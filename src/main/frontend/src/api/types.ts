@@ -166,6 +166,79 @@ export interface MeasurementSeriesResponse {
   totalChange: number | null;
 }
 
+// --- Nutrition targets -------------------------------------------------------------------------
+
+export type BmrEquation =
+  | 'HARRIS_BENEDICT_ORIGINAL'
+  | 'HARRIS_BENEDICT_REVISED'
+  | 'MIFFLIN_ST_JEOR';
+
+export type Sex = 'MALE' | 'FEMALE';
+
+export interface ActivityLevelResponse {
+  code: string;
+  factor: number;
+  labelEl: string;
+  labelEn: string;
+}
+
+export interface BmrRequest {
+  equation: BmrEquation;
+  sex: Sex;
+  weightKg: number;
+  heightCm: number;
+  ageYears: number;
+}
+
+/**
+ * Exactly one of `bmr`, `manualBmrKcal` and `manualEnergyKcal`. The server rejects zero or more
+ * than one, which is the right place for that rule to live — the UI's job is to make choosing
+ * one of the three obvious enough that it never has to.
+ */
+export interface EnergyRequirementRequest {
+  bmr?: BmrRequest;
+  manualBmrKcal?: number;
+  manualEnergyKcal?: number;
+  activityFactor?: number;
+  /** Negative for loss, positive for gain. The sign is the whole meaning. */
+  targetWeightChangeKg?: number;
+  periodDays?: number;
+}
+
+export interface EnergyRequirementResponse {
+  bmrKcal: number | null;
+  /** An equation name, or `MANUAL`, or `DIRECT`. A code, not display text. */
+  basis: string;
+  activityFactor: number | null;
+  maintenanceKcal: number;
+  weightGoalAdjustmentKcal: number;
+  targetKcal: number;
+}
+
+export interface MacroDistributionRequest {
+  targetKcal: number;
+  carbohydratePercent: number;
+  proteinPercent: number;
+  fatPercent: number;
+}
+
+export interface CoefficientRequirementRequest {
+  weightKg: number;
+  carbohydrateGPerKg: number;
+  proteinGPerKg: number;
+  fatGPerKg: number;
+}
+
+export interface MacroDistributionResponse {
+  targetKcal: number;
+  carbohydrateG: number;
+  proteinG: number;
+  fatG: number;
+  carbohydrateKcal: number;
+  proteinKcal: number;
+  fatKcal: number;
+}
+
 export interface MeasurementSummaryResponse {
   clientId: number;
   latest: MeasurementResponse[];

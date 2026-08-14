@@ -348,17 +348,33 @@ a rectangle.
 The fill is capped at 100% while the number is not. A 180% day drawn at 180% paints over the
 layout beside it; the figure and the "πάνω από τον στόχο" label carry the excess instead.
 
-### 7c. Adding food
+### 7c. Adding food ✅
 
-- [ ] Food search panel with debounced query against `GET /food`
-- [ ] Category filter
-- [ ] Result row showing per-100g composition
-- [ ] Portion picker defaulting to the food's default portion
-- [ ] Quantity input
-- [ ] `POST /plan/{planId}/meal/{mealId}/item`, replacing plan state from the response
-- [ ] Pending state on the target meal while in flight
-- [ ] Overridden foods visibly marked in results, since the practitioner's values are what will be
+- [x] Food search panel with debounced query against `GET /food`
+- [x] Category filter
+- [x] Result row showing per-100g composition
+- [x] Portion picker defaulting to the food's default portion
+- [x] Quantity input
+- [x] `POST /plan/{planId}/meal/{mealId}/item`, replacing plan state from the response
+- [x] Pending state on the target meal while in flight
+- [x] Overridden foods visibly marked in results, since the practitioner's values are what will be
       used
+
+The response is written into the cache with `setQueryData`, not followed by an invalidation: the
+server has just sent the canonical plan, so re-fetching it would be a round trip to learn what we
+already have. Verified against the running application that the meal total and the day's energy
+bar both equal the figures the server returned.
+
+**A defect caught before it shipped.** The portion picker offered a "Γραμμάρια" option that sent
+no `portionId`. Omitting it does not mean grams to this API — `PlanService.choosePortion` falls
+back to the food's *default portion* — so choosing grams and typing 150 would have recorded
+"150 × κεσεδάκι", a wrong prescription arrived at without a single error message. The picker now
+offers only real portions, and the one case where quantity genuinely is a multiple of weight (a
+food with no portions, where the server synthesises a 100 g unit) says so on the field label. A
+test asserts no option can ever carry an empty portion id.
+
+The dialog closes on success only. A failed add keeps it open with the message, so the
+practitioner does not have to find the food again to retry.
 
 ### 7d. Editing items
 

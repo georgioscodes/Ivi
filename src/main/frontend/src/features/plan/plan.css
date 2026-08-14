@@ -338,3 +338,146 @@
 .bar__over-label {
   white-space: nowrap;
 }
+
+/* --- Adding food ----------------------------------------------------------------------------- */
+
+.meal__add {
+  margin-top: var(--space-2);
+  padding: var(--space-1) 0;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  text-align: start;
+}
+
+.meal__add:hover:not(:disabled) {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.meal__add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meal--pending {
+  background: var(--grey-50);
+}
+
+.meal__pending {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.add-food {
+  max-width: 44rem;
+  width: calc(100vw - var(--space-6));
+}
+
+.add-food__target {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.add-food__filters {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.add-food__search {
+  flex: 1 1 16rem;
+}
+
+.add-food__category {
+  flex: 0 1 13rem;
+}
+
+/* Bounded so the dialog does not grow past the viewport on a long result list. */
+.add-food__results {
+  max-height: 22rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.food-result {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: start;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4);
+}
+
+.food-result:last-child {
+  border-bottom: none;
+}
+
+.food-result:hover {
+  background: var(--grey-50);
+}
+
+.food-result__name {
+  font-weight: 600;
+}
+
+.food-result__meta {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.food-result__composition {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.food-result__per {
+  color: var(--grey-400);
+}
+
+/* --- Portion step ---------------------------------------------------------------------------- */
+
+.portion-step__back {
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}
+
+.portion-step__name {
+  font-size: var(--text-lg);
+}
+
+.portion-step__composition {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: var(--space-4);
+}
+
+.portion-step__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-4);
+  align-items: end;
+}
+
+.portion-step__unit-note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.portion-step__preview {
+  background: var(--grey-50);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}

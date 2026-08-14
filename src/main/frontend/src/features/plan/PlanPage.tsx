@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import type { PlanDayResponse, PlanMealResponse } from '@/api/types';
 import { ErrorState, Loading } from '@/components/states';
 import { useClient } from '@/features/client/clientQueries';
+import { AddFoodDialog } from './AddFoodDialog';
 import { PlanView } from './PlanView';
-import { formatGrams, formatKcal, statusLabel } from './planLabels';
+import { dayLabel, formatGrams, formatKcal, mealLabel, statusLabel } from './planLabels';
+import { useAddItem } from './planMutations';
 import { usePlan } from './planQueries';
 import './plan.css';
 
@@ -20,6 +24,13 @@ export function PlanPage() {
 
   const plan = usePlan(planId);
   const client = useClient(clientId);
+  const addItem = useAddItem(planId);
+
+  // Which meal the food picker is filling. Held here rather than inside the dialog so the plan
+  // view can mark that meal pending while the request is in flight.
+  const [target, setTarget] = useState<{ day: PlanDayResponse; meal: PlanMealResponse } | null>(
+    null,
+  );
 
   if (plan.isPending) {
     return <Loading />;
@@ -98,7 +109,34 @@ export function PlanPage() {
         </dl>
       </section>
 
-      <PlanView plan={data} />
+      <PlanView
+        plan={data}
+        onAddFood={(day, meal) => setTarget({ day, meal })}
+        pendingMealId={addItem.isPending ? (target?.meal.id ?? null) : null}
+      />
+
+      <AddFoodDialog
+        open={target !== null}
+        dayLabel={target ? dayLabel(target.day) : ''}
+        mealLabel={target ? mealLabel(target.meal.mealType) : ''}
+        busy={addItem.isPending}
+        error={addItem.error}
+        onClose={() => {
+          setTarget(null);
+          addItem.reset();
+        }}
+        onAdd={(body) => {
+          if (!target) {
+            return;
+          }
+          addItem.mutate(
+            { mealId: target.meal.id, body },
+            // Closed on success only. A failed add keeps the dialog open with the message, so
+            // the practitioner does not have to find the food again to retry.
+            { onSuccess: () => setTarget(null) },
+          );
+        }}
+      />
     </>
   );
 }

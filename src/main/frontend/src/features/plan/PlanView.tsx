@@ -13,17 +13,41 @@ import './plan.css';
  * 7c–7g make this editable. The read-only shape came first because everything else is a change
  * to it.
  */
-export function PlanView({ plan }: { plan: PlanResponse }) {
+interface PlanViewProps {
+  plan: PlanResponse;
+  /** Opens the food picker for a meal. Omitted renders the plan read-only. */
+  onAddFood?: (day: PlanDayResponse, meal: PlanMealResponse) => void;
+  /** The meal currently waiting on a request, so it can show as pending rather than as done. */
+  pendingMealId?: number | null;
+}
+
+export function PlanView({ plan, onAddFood, pendingMealId }: PlanViewProps) {
   return (
     <div className="plan">
       {plan.days.map((day) => (
-        <PlanDay key={day.id} day={day} targets={plan.targets} />
+        <PlanDay
+          key={day.id}
+          day={day}
+          targets={plan.targets}
+          onAddFood={onAddFood}
+          pendingMealId={pendingMealId}
+        />
       ))}
     </div>
   );
 }
 
-function PlanDay({ day, targets }: { day: PlanDayResponse; targets: MacroTotals }) {
+function PlanDay({
+  day,
+  targets,
+  onAddFood,
+  pendingMealId,
+}: {
+  day: PlanDayResponse;
+  targets: MacroTotals;
+  onAddFood?: PlanViewProps['onAddFood'];
+  pendingMealId?: number | null;
+}) {
   const empty = day.meals.every((meal) => meal.items.length === 0);
 
   return (
@@ -42,7 +66,12 @@ function PlanDay({ day, targets }: { day: PlanDayResponse; targets: MacroTotals 
       */}
       <div className="day__meals">
         {day.meals.map((meal) => (
-          <Meal key={meal.id} meal={meal} />
+          <Meal
+            key={meal.id}
+            meal={meal}
+            onAddFood={onAddFood ? () => onAddFood(day, meal) : undefined}
+            pending={pendingMealId === meal.id}
+          />
         ))}
       </div>
 
@@ -53,9 +82,21 @@ function PlanDay({ day, targets }: { day: PlanDayResponse; targets: MacroTotals 
   );
 }
 
-function Meal({ meal }: { meal: PlanMealResponse }) {
+function Meal({
+  meal,
+  onAddFood,
+  pending,
+}: {
+  meal: PlanMealResponse;
+  onAddFood?: () => void;
+  pending?: boolean;
+}) {
   return (
-    <section className="meal" aria-labelledby={`meal-${meal.id}`}>
+    <section
+      className={`meal${pending ? ' meal--pending' : ''}`}
+      aria-labelledby={`meal-${meal.id}`}
+      aria-busy={pending || undefined}
+    >
       <header className="meal__header">
         <h4 className="meal__title" id={`meal-${meal.id}`}>
           {mealLabel(meal.mealType)}
@@ -66,7 +107,7 @@ function Meal({ meal }: { meal: PlanMealResponse }) {
         ) : null}
       </header>
 
-      {meal.items.length === 0 ? (
+      {meal.items.length === 0 && !pending ? (
         // Empty meals are shown rather than hidden: the slots are the shape of the day, and a
         // practitioner scanning for what is missing needs to see the gap.
         <p className="meal__empty">—</p>
@@ -91,6 +132,30 @@ function Meal({ meal }: { meal: PlanMealResponse }) {
           ))}
         </ul>
       )}
+
+      {/*
+        Pending is shown, never guessed at. The new item's own figures are not drawn here because
+        they do not exist yet — the server computes them — and a placeholder that turns out wrong
+        is the failure the whole design avoids.
+      */}
+      {pending ? (
+        <p className="meal__pending" role="status">
+          Προσθήκη…
+        </p>
+      ) : null}
+
+      {onAddFood ? (
+        <button
+          type="button"
+          className="meal__add"
+          onClick={onAddFood}
+          disabled={pending}
+        >
+          <span aria-hidden="true">+ </span>
+          Προσθήκη
+          <span className="visually-hidden"> τροφίμου στο γεύμα {mealLabel(meal.mealType)}</span>
+        </button>
+      ) : null}
     </section>
   );
 }

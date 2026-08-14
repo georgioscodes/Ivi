@@ -25,6 +25,7 @@ export default defineConfig({
     // the faster of the two by a wide margin for that much.
     environment: 'happy-dom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    setupFiles: ['src/test-setup.ts'],
   },
   server: {
     port: 5173,

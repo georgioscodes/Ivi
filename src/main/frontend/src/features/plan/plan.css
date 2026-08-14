@@ -658,3 +658,175 @@
   font-size: var(--text-sm);
   max-width: 52rem;
 }
+
+/* --- Analysis panel -------------------------------------------------------------------------- */
+
+.analysis {
+  margin-bottom: var(--space-6);
+}
+
+/*
+  The table scrolls inside its own box on a narrow screen rather than widening the page. It is
+  focusable so a keyboard user can scroll it without a pointer, which is what makes the horizontal
+  overflow reachable at all.
+*/
+.analysis__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.analysis__scroll:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.analysis__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  /* Below this the day names wrap to three lines and the columns stop lining up. */
+  min-width: 34rem;
+}
+
+.analysis__table th,
+.analysis__table td {
+  padding: var(--space-2) var(--space-4);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.analysis__table thead th {
+  font-weight: 600;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+}
+
+.analysis__unit {
+  color: var(--grey-500);
+  font-weight: 400;
+}
+
+/* The day name column reads as a list of labels, so it is the one thing aligned to the start —
+   its heading included, or the heading sits over the wrong edge of its own column. */
+.analysis__table thead th:first-child,
+.analysis__table tbody th,
+.analysis__table tfoot th {
+  text-align: start;
+}
+
+.analysis__table tbody th,
+.analysis__table tfoot th {
+  font-weight: 500;
+}
+
+.analysis__row + .analysis__row th,
+.analysis__row + .analysis__row td {
+  border-top: 1px solid var(--grey-100);
+}
+
+/* The targets are the line everything below is read against, so they are set apart from the days
+   rather than looking like the first of them. */
+.analysis__row--target th,
+.analysis__row--target td {
+  color: var(--ink-muted);
+  background: var(--grey-50);
+  border-bottom: 1px solid var(--border);
+}
+
+.analysis__row--average th,
+.analysis__row--average td {
+  border-top: 2px solid var(--border);
+  font-weight: 600;
+  background: var(--grey-50);
+}
+
+.analysis__row-note {
+  display: block;
+  font-weight: 400;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.analysis__value {
+  display: block;
+}
+
+.analysis__pct {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.analysis__cell--over .analysis__pct {
+  color: var(--error);
+  font-weight: 600;
+}
+
+/* --- Notes ----------------------------------------------------------------------------------- */
+
+.notes {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-6);
+  max-width: 52rem;
+}
+
+.notes__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* `pre-wrap` because the practitioner's line breaks are meaning — a list of substitutions is a
+   list, and the export prints it with the same rule. */
+.notes__body {
+  white-space: pre-wrap;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  line-height: var(--leading-normal);
+}
+
+.notes__empty,
+.notes__hint {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  max-width: 44rem;
+}
+
+.notes__input {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  font: inherit;
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  resize: vertical;
+}
+
+.notes__input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.notes__count {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.notes__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

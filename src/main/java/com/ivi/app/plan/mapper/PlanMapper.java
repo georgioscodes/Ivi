@@ -41,6 +41,7 @@ public final class PlanMapper {
             plan.getNotes(),
             plan.getDays().stream().map(day -> toDto(day, plan)).toList(),
             dailyAverage(plan),
+            dailyAveragePercent(plan),
             plan.getVersion(),
             plan.getCreatedAt(),
             plan.getUpdatedAt()
@@ -159,6 +160,34 @@ public final class PlanMapper {
     }
 
     private static MacroTotals dailyAverage(PlanEntity plan) {
+        MacroTotals mean = meanPerDay(plan);
+        return new MacroTotals(
+            Nutrients.roundEnergy(mean.energyKcal()),
+            Nutrients.roundMacro(mean.proteinG()),
+            Nutrients.roundMacro(mean.carbohydrateG()),
+            Nutrients.roundMacro(mean.fatG())
+        );
+    }
+
+    /**
+     * The average day against target.
+     *
+     * <p>Taken from the unrounded mean for the same reason {@link #percentOfTarget} is taken from
+     * unrounded totals: rounding before dividing is how a figure that has plainly hit target ends
+     * up beside a percentage that says 99.
+     */
+    private static MacroTotals dailyAveragePercent(PlanEntity plan) {
+        MacroTotals mean = meanPerDay(plan);
+        return new MacroTotals(
+            percent(mean.energyKcal(), plan.getTargetKcal()),
+            percent(mean.proteinG(), plan.getTargetProteinG()),
+            percent(mean.carbohydrateG(), plan.getTargetCarbohydrateG()),
+            percent(mean.fatG(), plan.getTargetFatG())
+        );
+    }
+
+    /** Unrounded, so callers can round or divide as each needs. */
+    private static MacroTotals meanPerDay(PlanEntity plan) {
         int dayCount = plan.getDays().size();
         if (dayCount == 0) {
             return new MacroTotals(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
@@ -178,10 +207,10 @@ public final class PlanMapper {
         }
 
         return new MacroTotals(
-            Nutrients.roundEnergy(Nutrients.divide(energy, days)),
-            Nutrients.roundMacro(Nutrients.divide(protein, days)),
-            Nutrients.roundMacro(Nutrients.divide(carbohydrate, days)),
-            Nutrients.roundMacro(Nutrients.divide(fat, days))
+            Nutrients.divide(energy, days),
+            Nutrients.divide(protein, days),
+            Nutrients.divide(carbohydrate, days),
+            Nutrients.divide(fat, days)
         );
     }
 }

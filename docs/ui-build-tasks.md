@@ -498,12 +498,67 @@ sentence wanted a genitive. Weekday names could be given genitive forms; a pract
 label ("Ημέρα προπόνησης") could not. The sentence now places the label in apposition after
 «ημέρας», where it holds any label without being declined.
 
-### 7h. Analysis panel
+### 7h. Analysis panel ✅
 
-- [ ] Per-day totals against targets
-- [ ] Weekly average, as returned
-- [ ] Plan notes
-- [ ] PDF export button (`GET /export/plan/{planId}`), handling the `Content-Disposition` filename
+- [x] Per-day totals against targets, as one table with every day on adjacent rows
+- [x] Weekly average, as returned — now the table's last row
+- [x] Plan notes, editable, printed in the client's PDF
+- [x] PDF export button (`GET /export/plan/{planId}`), handling the `Content-Disposition` filename
+
+The per-day bars already answer whether *a* day works. What they cannot show is the shape of the
+week — which day is the light one, whether protein sags on the days without a snack. That needs
+the days on adjacent rows, so the panel is a table: targets, then a row per day, then the average.
+
+The daily average moved out of the header and into that table as its final row. An average is only
+readable against the days it averages, and two copies of the same four numbers on one screen
+invite the question of why they differ — which, the moment one is stale, they will.
+
+Nothing here is derived. The values are the day totals, the percentages are `targetPercent`, and
+the average row is `dailyAverage`. Verified against the running server rather than asserted: all
+sixteen percentages on screen were compared against the API response, and the fixtures in the
+component test give a day whose percentage deliberately does not follow from its totals.
+
+**Three backend gaps, all found by wiring the UI to what was actually there.**
+
+`PlanExportService.fileNameFor` had built a proper name from the client and the plan since the
+export was written, and the controller ignored it — every download arrived as `plan-42.pdf`. A
+practitioner exporting for three clients in a row got three files they could only tell apart by
+opening them, which is how a plan for the wrong person ends up attached to an email. The service
+now returns a `PlanExport` carrying content and name together, since only it has the client's
+name. Nothing caught this because the export module had **no tests at all**; it has six now.
+
+`PlanResponse` carried `dailyAverage` but no percentage for it, so the average row could show
+figures and no progress — the one row that answers whether the week works. `dailyAveragePercent`
+is computed server-side from the unrounded mean, for the same reason `targetPercent` is: rounding
+before dividing is how a figure that has plainly hit target ends up beside a percentage saying 99.
+
+`notes` was on the entity, on the response, and printed by the PDF template — and **nothing could
+ever write it**. Not on `PlanCreateRequest`, no update endpoint. The Σημειώσεις section of the
+export was unreachable code. `PATCH /plan/{id}/notes` fixes that, and the exported PDF was then
+checked for the Greek text rather than assumed to contain it.
+
+Notes save on a button, unlike every other edit in the builder. The rest commits as you go because
+each change is a discrete act — a quantity, a food, an order. Prose is not: a half-typed sentence
+auto-saving into the document a client receives is not a saved draft, it is a published mistake.
+The draft also stops re-syncing from the server while the editor is open, because every other edit
+on the page replaces the whole cached plan and would otherwise wipe a sentence mid-word.
+
+**The PDF is fetched, not linked.** A plain `<a href>` to the export would be simpler, and a
+control experiment showed exactly what it costs: pointed at a plan that does not exist, the
+browser cheerfully saved the 404 JSON body as a `.pdf`. Fetching means a failure surfaces as a
+message instead. The cost is that the filename must be applied client-side from
+`Content-Disposition`, which is the `filename*` parsing written back in Block 1 and never once run
+against a real download until now.
+
+**An environment trap worth recording.** That download check failed the first time: Chromium
+reported the file as `download`, discarding the Greek name. It reproduced with a bare blob and no
+application code involved, and the cause was the container's `POSIX` locale — under `C.UTF-8` the
+name comes through intact. Not a product defect, but it is exactly the shape of thing that gets
+"fixed" in the wrong place.
+
+**Left alone, for Block 9.** At phone widths the page scrolls sideways by 25px. Measured with the
+analysis panel hidden: the overflow is unchanged, and comes from `.shell__account` in the app
+shell. Pre-existing, and layout is Block 9's business.
 
 ---
 

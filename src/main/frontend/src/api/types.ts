@@ -240,6 +240,8 @@ export interface PlanResponse {
   notes: string | null;
   days: PlanDayResponse[];
   dailyAverage: MacroTotals;
+  /** The average day against target, per macro — computed server-side, like every other figure. */
+  dailyAveragePercent: MacroTotals;
   /** Optimistic lock. A stale value is what turns a concurrent edit into a 409 rather than a
    *  silent overwrite. */
   version: number;

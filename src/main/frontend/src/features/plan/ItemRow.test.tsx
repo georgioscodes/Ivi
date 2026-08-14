@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { PlanItemResponse } from '@/api/types';
@@ -34,8 +34,6 @@ function actions(overrides: Partial<ItemActions> = {}): ItemActions {
 }
 
 describe('ItemRow quantity editing', () => {
-  afterEach(cleanup);
-
   /**
    * Real timers, not fake ones. userEvent and Testing Library's waitFor each drive their own
    * clock, and pinning all three together is more machinery than a 600ms debounce is worth —
@@ -125,8 +123,6 @@ describe('ItemRow quantity editing', () => {
 });
 
 describe('ItemRow display', () => {
-  afterEach(cleanup);
-
   it('should keep the last confirmed figures on screen while saving', () => {
     // Given — an edit in flight. The old numbers are what the server last confirmed; replacing
     // them with a guess is the failure this design exists to prevent, and blanking them makes

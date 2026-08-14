@@ -3,6 +3,7 @@ package com.ivi.app.export.service;
 import com.ivi.app.audit.model.AuditAction;
 import com.ivi.app.audit.service.AuditService;
 import com.ivi.app.client.dto.ClientResponse;
+import com.ivi.app.export.dto.PlanExport;
 import com.ivi.app.client.service.ClientService;
 import com.ivi.app.plan.dto.PlanResponse;
 import com.ivi.app.plan.service.PlanService;
@@ -58,7 +59,7 @@ public class PlanExportService {
     private final AuditService auditService;
 
     @Transactional(readOnly = true)
-    public Optional<byte[]> renderPlan(Long planId) {
+    public Optional<PlanExport> renderPlan(Long planId) {
         return planService.findById(planId).map(plan -> {
             String clientName = clientService.findById(plan.clientId())
                 .map(ClientResponse::fullName)
@@ -72,7 +73,10 @@ public class PlanExportService {
             // which is a materially different event from viewing a record on screen.
             auditService.record(AuditAction.EXPORT, "PLAN_PDF", plan.id(), plan.clientId());
 
-            return renderer.render(buildHtml(plan, clientName, practiceName), "classpath:/templates/");
+            byte[] pdf = renderer.render(
+                buildHtml(plan, clientName, practiceName), "classpath:/templates/");
+
+            return new PlanExport(pdf, fileNameFor(plan, clientName));
         });
     }
 
@@ -81,11 +85,13 @@ public class PlanExportService {
      *
      * <p>Non-ASCII is kept — the Content-Disposition header encodes it — but characters that are
      * awkward in a filename are replaced rather than left to the operating system to reject.
+     * Control characters go too: both halves of the name are practitioner-entered free text, and
+     * a newline reaching a response header is how header injection starts.
      */
-    public String fileNameFor(PlanResponse plan, String clientName) {
+    String fileNameFor(PlanResponse plan, String clientName) {
         String base = (clientName == null || clientName.isBlank() ? plan.name() : clientName)
             + " - " + plan.name();
-        return base.replaceAll("[\\\\/:*?\"<>|]", "-").trim() + ".pdf";
+        return base.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "-").trim() + ".pdf";
     }
 
     private String buildHtml(PlanResponse plan, String clientName, String practiceName) {

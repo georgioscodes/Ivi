@@ -200,6 +200,21 @@ public class PlanService {
         });
     }
 
+    /**
+     * Replaces the plan's notes.
+     *
+     * <p>Blank is stored as null so the export's notes section stays absent rather than printing
+     * an empty heading — the template branches on the field being present, not on it being
+     * non-empty.
+     */
+    public Optional<PlanResponse> updateNotes(Long planId, String notes) {
+        return load(planId).map(plan -> {
+            plan.setNotes(notes == null || notes.isBlank() ? null : notes.trim());
+            plan.touch();
+            return PlanMapper.toDto(planRepository.save(plan));
+        });
+    }
+
     public Optional<PlanResponse> updateStatus(Long planId, String status) {
         return load(planId).map(plan -> {
             try {

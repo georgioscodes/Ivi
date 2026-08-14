@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
@@ -49,8 +49,6 @@ describe('ProtectedRoute', () => {
   beforeEach(() => {
     me.mockReset();
   });
-
-  afterEach(cleanup);
 
   it('should wait rather than showing the login form, while the session is still unknown', async () => {
     // Given — a request that has not resolved. Every page load passes through this state.
@@ -110,8 +108,6 @@ describe('GuestOnlyRoute', () => {
   beforeEach(() => {
     me.mockReset();
   });
-
-  afterEach(cleanup);
 
   it('should keep a signed-in practitioner off the sign-in screen', async () => {
     // Given — a bookmarked /login. Submitting it would rotate a session that was working.

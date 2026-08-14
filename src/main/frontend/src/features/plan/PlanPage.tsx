@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
+import { messageFor } from '@/api/messages';
 import type { PlanDayResponse, PlanItemResponse, PlanMealResponse } from '@/api/types';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, Loading } from '@/components/states';
 import { useClient } from '@/features/client/clientQueries';
 import { strings } from '@/strings';
 import { AddFoodDialog } from './AddFoodDialog';
+import { PlanAnalysis } from './PlanAnalysis';
+import { PlanNotes } from './PlanNotes';
 import { PlanView } from './PlanView';
 import { RenameItemDialog } from './RenameItemDialog';
 import { SaveStatus } from './SaveStatus';
@@ -27,6 +30,7 @@ import {
   useUpdateItem,
   useUpdateStatus,
 } from './planMutations';
+import { useExportPlan } from './planExport';
 import { useDeletePlan, usePlan } from './planQueries';
 import './plan.css';
 
@@ -51,6 +55,7 @@ export function PlanPage() {
   const clearDay = useClearDay(planId);
   const updateStatus = useUpdateStatus(planId);
   const deletePlan = useDeletePlan();
+  const exportPlan = useExportPlan(planId);
 
   const [clearing, setClearing] = useState<PlanDayResponse | null>(null);
   const [deletingPlan, setDeletingPlan] = useState(false);
@@ -112,6 +117,22 @@ export function PlanPage() {
         </div>
 
         <div className="plan__header-actions">
+          {/*
+            The fallback name is only used if Content-Disposition arrives without one — the server
+            names the file after the client and the plan, and that name is the one to keep.
+          */}
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={exportPlan.isPending}
+            onClick={() =>
+              exportPlan.mutate(
+                client.data ? `${client.data.fullName} - ${data.name}` : data.name,
+              )
+            }
+          >
+            {exportPlan.isPending ? 'Δημιουργία PDF…' : 'Λήψη PDF'}
+          </button>
           {statusAction ? (
             <button
               type="button"
@@ -132,6 +153,14 @@ export function PlanPage() {
           </button>
         </div>
       </header>
+
+      {/* The PDF is fetched rather than linked, so a failure lands here as a message instead of
+          as a browser error page on a blank tab. */}
+      {exportPlan.error ? (
+        <p className="form-error" role="alert">
+          Το PDF δεν δημιουργήθηκε. {messageFor(exportPlan.error)}
+        </p>
+      ) : null}
 
       {/*
         Archived plans stay editable — the server permits it and there are legitimate reasons —
@@ -169,27 +198,15 @@ export function PlanPage() {
           </div>
         </dl>
 
-        {/* The average across every day, from the server. For a plan whose days differ this is
-            the figure that says whether the week works, which no single day does. */}
-        <dl className="plan__target-grid plan__target-grid--average">
-          <div>
-            <dt>Μέσος όρος ημέρας</dt>
-            <dd>{formatKcal(data.dailyAverage.energyKcal)} kcal</dd>
-          </div>
-          <div>
-            <dt>Πρωτεΐνη</dt>
-            <dd>{formatGrams(data.dailyAverage.proteinG)} g</dd>
-          </div>
-          <div>
-            <dt>Υδατάνθρακες</dt>
-            <dd>{formatGrams(data.dailyAverage.carbohydrateG)} g</dd>
-          </div>
-          <div>
-            <dt>Λίπος</dt>
-            <dd>{formatGrams(data.dailyAverage.fatG)} g</dd>
-          </div>
-        </dl>
       </section>
+
+      {/*
+        The daily average used to sit up here next to the targets. It has moved into the summary
+        table, as its last row: an average is only readable against the days it averages, and two
+        copies of the same four numbers on one screen invite the question of why they differ —
+        which, the moment one of them is stale, they will.
+      */}
+      <PlanAnalysis plan={data} />
 
       {/*
         One indicator for the whole plan. There is no save button — every edit commits on its own
@@ -241,6 +258,8 @@ export function PlanPage() {
           },
         }}
       />
+
+      <PlanNotes planId={planId} notes={data.notes} />
 
       <RenameItemDialog
         item={renaming}

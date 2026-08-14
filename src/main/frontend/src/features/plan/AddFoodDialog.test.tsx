@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClientProvider } from '@tanstack/react-query';
 
@@ -70,8 +70,6 @@ describe('AddFoodDialog', () => {
       this.open = false;
     });
   });
-
-  afterEach(cleanup);
 
   it('should never offer a portion choice that sends no portion id', async () => {
     // Given — the defect this guards. `PlanService.choosePortion` treats a missing portionId as

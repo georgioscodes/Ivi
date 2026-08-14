@@ -3,6 +3,7 @@ package com.ivi.app.plan.controller;
 import com.ivi.app.plan.dto.PlanCreateRequest;
 import com.ivi.app.plan.dto.PlanItemAddRequest;
 import com.ivi.app.plan.dto.PlanItemUpdateRequest;
+import com.ivi.app.plan.dto.PlanNotesRequest;
 import com.ivi.app.plan.dto.PlanResponse;
 import com.ivi.app.plan.dto.PlanSummaryResponse;
 import com.ivi.app.plan.service.PlanService;
@@ -107,6 +108,14 @@ public class PlanController {
         return planService.clearDay(planId, dayIndex)
             .map(ResponseEntity::ok)
             .orElseThrow(() -> new ResourceNotFoundException("Plan", planId));
+    }
+
+    @PatchMapping("/{id}/notes")
+    public ResponseEntity<PlanResponse> updateNotes(@PathVariable Long id,
+                                                    @Valid @RequestBody PlanNotesRequest request) {
+        return planService.updateNotes(id, request.notes())
+            .map(ResponseEntity::ok)
+            .orElseThrow(() -> new ResourceNotFoundException("Plan", id));
     }
 
     @PatchMapping("/{id}/status")

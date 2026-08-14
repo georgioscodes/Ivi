@@ -213,6 +213,25 @@ export function useUpdateStatus(planId: number) {
   });
 }
 
+/**
+ * Replaces the plan's notes — the instructions that print under the food in the client's PDF.
+ *
+ * Blank clears them, which removes the section from the export rather than printing an empty
+ * heading. The server does that trimming; sending `''` and sending `null` mean the same thing.
+ */
+export function useUpdateNotes(planId: number) {
+  const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
+
+  return useMutation({
+    mutationFn: (notes: string) =>
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/notes`, { method: 'PATCH', body: { notes } }),
+      ),
+    onSuccess: replacePlan,
+  });
+}
+
 export function useRemoveItem(planId: number) {
   const replacePlan = useReplacePlan(planId);
   const withRetry = useConflictRetry(planId);

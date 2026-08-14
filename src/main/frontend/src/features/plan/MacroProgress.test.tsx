@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 import type { MacroTotals } from '@/api/types';
 import { MacroProgress } from './MacroProgress';
@@ -16,8 +16,6 @@ function renderBars(totals: MacroTotals, percent: MacroTotals) {
 }
 
 describe('MacroProgress', () => {
-  afterEach(cleanup);
-
   it('should use the percentage the server supplied, not one it worked out', () => {
     // Given — totals and percentages that do not agree. The server's number wins, because
     // recomputing here is the second implementation this architecture exists to avoid.

@@ -406,13 +406,45 @@ would let that be stated rather than implied.
 - [ ] Optimistic *ordering* is acceptable — it is not a number, and the server rejects a list that
       does not match the meal exactly
 
-### 7f. Concurrency and persistence
+### 7f. Concurrency and persistence ✅
 
-- [ ] Surface `version` from the plan response
-- [ ] **409 handling**: tell the practitioner the plan changed elsewhere, offer reload; never
-      silently overwrite. The backend already returns 409 with a message
-- [ ] Saved / saving / failed indicator for the plan as a whole
-- [ ] Retry on transient failure, with the edit preserved
+- [x] Surface `version` from the plan response — used to detect that a re-read moved the plan on,
+      not shown to the practitioner, for whom a version counter means nothing
+- [x] **409 handling**: never silently overwrite. Automatic single retry first; a conflict that
+      survives it is reported and offers reload
+- [x] Saved / saving / conflict / failed indicator for the plan as a whole
+- [x] Retry on transient failure, with the edit preserved
+
+**What the locking actually does — measured, not assumed.** Before building any of this I fired
+concurrent requests at the running server:
+
+| Case | Result |
+|---|---|
+| Two clients holding a stale version, editing **sequentially** | Both succeed. No conflict — the API takes deltas, not whole documents, so a laptop and a tablet editing different things both apply |
+| Simultaneous edits to the **same item** | 2 of 6 succeeded, 4 rejected with 409 |
+| Simultaneous adds to **four different meals** | 1 of 4 succeeded — **three legitimate items were lost** |
+
+The third row is the problem. `@Version` sits on the plan aggregate and every item operation
+bumps it, so edits that conflict over nothing in common still collide. The task list's premise —
+"tell the practitioner the plan changed elsewhere" — describes the second row; the third is more
+likely and is not a conflict in any sense a practitioner would recognise.
+
+So every plan mutation now retries once on 409, re-reading the plan first. This is safe precisely
+because a 409 from optimistic locking means the transaction **rolled back**: the change did not
+apply, so re-sending it cannot duplicate anything. A network failure carries no such guarantee,
+which is why the global mutation retry stays off and this is scoped to 409 alone. Re-running the
+four-way burst through the retry: 4 × 200, nothing lost.
+
+The conflict message says the change did not save and offers reload. It deliberately does **not**
+say somebody else changed the plan — the likeliest cause is the practitioner's own two actions
+sharing a version counter, and naming a culprit who may not exist is worse than saying nothing.
+
+A conflict offers no retry button: it would conflict again. A server fault does, because it might
+pass — and never automatically, since a timed-out request may already have been applied.
+
+**Worth fixing server-side eventually.** Locking at the plan level makes independent meal edits
+collide. Finer-grained versioning, or a retry inside the service, would remove the need for the
+client to compensate.
 
 ### 7g. Day operations and status
 

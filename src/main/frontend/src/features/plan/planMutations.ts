@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { ApiError } from '@/api/ApiError';
 import { request } from '@/api/http';
 import type { PlanItemAddRequest, PlanItemUpdateRequest, PlanResponse } from '@/api/types';
 import { planKeys } from './planQueries';
@@ -21,12 +22,50 @@ function useReplacePlan(planId: number) {
   return (plan: PlanResponse) => queryClient.setQueryData(planKeys.detail(planId), plan);
 }
 
+/**
+ * Runs a plan mutation, retrying once if the optimistic lock rejects it.
+ *
+ * `@Version` sits on the plan *aggregate*, and every item operation bumps it. Measured against
+ * the running server: four simultaneous adds to four **different meals** produced three 409s and
+ * lost three legitimate items. Nothing about those edits actually conflicted — they collided only
+ * because they shared a version counter.
+ *
+ * A retry is safe here in a way it is not for a network failure. A 409 from optimistic locking
+ * means the transaction rolled back, so the change definitively did not apply; re-sending it
+ * cannot duplicate anything. A timed-out request carries no such guarantee, which is why the
+ * global mutation retry stays off and this is scoped to 409 alone.
+ *
+ * The plan is re-fetched before the retry so the second attempt starts from current state.
+ * If it conflicts again, that is a real fight over the same record and the caller surfaces it.
+ */
+function useConflictRetry(planId: number) {
+  const queryClient = useQueryClient();
+
+  return async function run(attempt: () => Promise<PlanResponse>): Promise<PlanResponse> {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (!(error instanceof ApiError) || !error.isConflict) {
+        throw error;
+      }
+      await queryClient.fetchQuery({
+        queryKey: planKeys.detail(planId),
+        queryFn: () => request<PlanResponse>(`/plan/${planId}`),
+      });
+      return attempt();
+    }
+  };
+}
+
 export function useAddItem(planId: number) {
   const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
 
   return useMutation({
     mutationFn: ({ mealId, body }: { mealId: number; body: PlanItemAddRequest }) =>
-      request<PlanResponse>(`/plan/${planId}/meal/${mealId}/item`, { method: 'POST', body }),
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/meal/${mealId}/item`, { method: 'POST', body }),
+      ),
     onSuccess: replacePlan,
   });
 }
@@ -41,20 +80,26 @@ export function useAddItem(planId: number) {
  */
 export function useUpdateItem(planId: number) {
   const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
 
   return useMutation({
     mutationFn: ({ itemId, body }: { itemId: number; body: PlanItemUpdateRequest }) =>
-      request<PlanResponse>(`/plan/${planId}/item/${itemId}`, { method: 'PUT', body }),
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/item/${itemId}`, { method: 'PUT', body }),
+      ),
     onSuccess: replacePlan,
   });
 }
 
 export function useRemoveItem(planId: number) {
   const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
 
   return useMutation({
     mutationFn: (itemId: number) =>
-      request<PlanResponse>(`/plan/${planId}/item/${itemId}`, { method: 'DELETE' }),
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/item/${itemId}`, { method: 'DELETE' }),
+      ),
     onSuccess: replacePlan,
   });
 }

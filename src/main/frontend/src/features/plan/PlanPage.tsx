@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import type { PlanDayResponse, PlanItemResponse, PlanMealResponse } from '@/api/types';
-import { messageFor } from '@/api/messages';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, Loading } from '@/components/states';
 import { useClient } from '@/features/client/clientQueries';
@@ -10,6 +9,8 @@ import { strings } from '@/strings';
 import { AddFoodDialog } from './AddFoodDialog';
 import { PlanView } from './PlanView';
 import { RenameItemDialog } from './RenameItemDialog';
+import { SaveStatus } from './SaveStatus';
+import { usePlanSaveState } from './usePlanSaveState';
 import { dayLabel, formatGrams, formatKcal, mealLabel, statusLabel } from './planLabels';
 import { useAddItem, useRemoveItem, useUpdateItem } from './planMutations';
 import { usePlan } from './planQueries';
@@ -36,6 +37,12 @@ export function PlanPage() {
   const [removing, setRemoving] = useState<PlanItemResponse | null>(null);
   // Which item is mid-request, so its row can say so and its controls stop accepting input.
   const [pendingItemId, setPendingItemId] = useState<number | null>(null);
+
+  // The last edit that failed, kept so a transient failure can be retried without the
+  // practitioner having to reconstruct what they were doing.
+  const [lastEdit, setLastEdit] = useState<(() => void) | null>(null);
+
+  const save = usePlanSaveState([addItem, updateItem, removeItem]);
 
   // Which meal the food picker is filling. Held here rather than inside the dialog so the plan
   // view can mark that meal pending while the request is in flight.
@@ -120,18 +127,29 @@ export function PlanPage() {
         </dl>
       </section>
 
-      {/* An item edit that failed says so above the plan; the row keeps the last confirmed
-          figures, which are still what the server holds. */}
-      {updateItem.error ? (
-        <p className="form-error" role="alert">
-          {messageFor(updateItem.error)}
-        </p>
-      ) : null}
-      {removeItem.error ? (
-        <p className="form-error" role="alert">
-          {messageFor(removeItem.error)}
-        </p>
-      ) : null}
+      {/*
+        One indicator for the whole plan. There is no save button — every edit commits on its own
+        — so this is the only thing telling a practitioner their work is safe.
+      */}
+      <SaveStatus
+        state={save.state}
+        error={save.error}
+        onReload={() => {
+          updateItem.reset();
+          removeItem.reset();
+          addItem.reset();
+          void plan.refetch();
+        }}
+        onRetry={
+          lastEdit
+            ? () => {
+                updateItem.reset();
+                removeItem.reset();
+                lastEdit();
+              }
+            : undefined
+        }
+      />
 
       <PlanView
         plan={data}
@@ -142,11 +160,17 @@ export function PlanPage() {
           onRename: setRenaming,
           onRemove: setRemoving,
           onQuantityChange: (itemId, quantity) => {
-            setPendingItemId(itemId);
-            updateItem.mutate(
-              { itemId, body: { quantity } },
-              { onSettled: () => setPendingItemId(null) },
-            );
+            const apply = () => {
+              setPendingItemId(itemId);
+              updateItem.mutate(
+                { itemId, body: { quantity } },
+                { onSettled: () => setPendingItemId(null) },
+              );
+            };
+            // Kept so a network failure can be retried with the same edit, rather than asking
+            // the practitioner to remember what they had typed.
+            setLastEdit(() => apply);
+            apply();
           },
         }}
       />

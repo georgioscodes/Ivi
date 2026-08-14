@@ -555,3 +555,43 @@
   margin-inline-end: auto;
   font-size: var(--text-sm);
 }
+
+/* --- Save status ----------------------------------------------------------------------------- */
+
+.save-status {
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.save-status--saving,
+.save-status--saved {
+  color: var(--text-secondary);
+}
+
+.save-status--saved {
+  color: var(--success);
+}
+
+/*
+ * Amber for a conflict, red for a fault. They call for different things — a conflict means
+ * reload and reapply, a fault means try again or wait — and the symbol plus the sentence carry
+ * that; the colour only reinforces it.
+ */
+.save-status--conflict,
+.save-status--failed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  border: 1px solid var(--warning);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: #fdf6ec;
+  padding: var(--space-3) var(--space-4);
+}
+
+.save-status--failed {
+  border-color: var(--error);
+  background: #fbf3f2;
+}

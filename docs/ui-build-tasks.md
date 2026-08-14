@@ -470,11 +470,33 @@ pass — and never automatically, since a timed-out request may already have bee
 collide. Finer-grained versioning, or a retry inside the service, would remove the need for the
 client to compensate.
 
-### 7g. Day operations and status
+### 7g. Day operations and status ✅
 
-- [ ] Clear day (`DELETE /plan/{planId}/day/{dayIndex}/item`) with confirmation
-- [ ] Status transitions draft → issued → archived (`PATCH /plan/{id}/status`)
-- [ ] Delete plan
+- [x] Clear day (`DELETE /plan/{planId}/day/{dayIndex}/item`) with confirmation, offered only on
+      a day that has something in it. It empties the day and keeps its meals, so the confirmation
+      says that rather than implying the day is being removed
+- [x] Status transitions draft → issued → archived (`PATCH /plan/{id}/status`)
+- [x] Delete plan
+
+The server permits **any** status transition in any direction — these are labels on a document,
+not a workflow with gates. So the UI offers the one step that follows naturally from where the
+plan is, and describes what it means rather than only naming it: "Έκδοση πλάνου" alone does not
+answer the question a practitioner actually has, which is whether the plan stays editable. An
+archived plan can be reopened, because a practitioner may have archived the wrong one.
+
+Archived plans stay editable, as the server allows. They carry a notice saying the plan is part
+of the client's record — blocking client-side what the server permits would be inventing a
+constraint, but changing an archived plan silently is not the same act as editing a draft.
+
+**A backend fix.** `updateStatus` was the only mutation that did not call `plan.touch()`, so
+issuing or archiving a plan left "last updated" showing whenever the *contents* were last edited
+— stale at exactly the moment a practitioner looks at it, which is after handing the plan over.
+
+**A Greek grammar defect, caught by reading the rendered dialog.** Interpolating the day label
+after a preposition produced "Όλα τα τρόφιμα **της Δευτέρα**" — the label is nominative and the
+sentence wanted a genitive. Weekday names could be given genitive forms; a practitioner's own
+label ("Ημέρα προπόνησης") could not. The sentence now places the label in apposition after
+«ημέρας», where it holds any label without being declined.
 
 ### 7h. Analysis panel
 

@@ -6,6 +6,7 @@ import {
   formatKcal,
   formatQuantity,
   mealLabel,
+  nextStatusAction,
   portionSummary,
   statusLabel,
 } from './planLabels';
@@ -108,5 +109,34 @@ describe('formatKcal', () => {
   it('should show a dash rather than zero for a missing figure', () => {
     expect(formatKcal(null)).toBe('—');
     expect(formatKcal(0)).toBe('0');
+  });
+});
+
+describe('nextStatusAction', () => {
+  it('should offer the step that follows naturally from where the plan is', () => {
+    // Given — the server permits any transition in any direction, so this guides rather than
+    // constrains: one obvious next step per state.
+    expect(nextStatusAction('DRAFT')?.status).toBe('ISSUED');
+    expect(nextStatusAction('ISSUED')?.status).toBe('ARCHIVED');
+  });
+
+  it('should let an archived plan be reopened', () => {
+    // Given — a practitioner may have archived the wrong one, and the server does not stop them
+    expect(nextStatusAction('ARCHIVED')?.status).toBe('DRAFT');
+  });
+
+  it('should explain what the change means, not merely name it', () => {
+    // Given — "Έκδοση" alone does not say whether the plan stays editable, which is the
+    // question a practitioner actually has before pressing it
+    for (const status of ['DRAFT', 'ISSUED', 'ARCHIVED']) {
+      const action = nextStatusAction(status);
+      expect(action?.label).toMatch(/\S/);
+      expect(action?.explanation.length).toBeGreaterThan(20);
+    }
+  });
+
+  it('should offer nothing for a status it does not recognise', () => {
+    // Given — a state added server-side against an older build
+    expect(nextStatusAction('SUPERSEDED')).toBeNull();
   });
 });

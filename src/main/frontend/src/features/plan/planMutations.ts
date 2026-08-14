@@ -2,7 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@/api/ApiError';
 import { request } from '@/api/http';
-import type { PlanItemAddRequest, PlanItemUpdateRequest, PlanResponse } from '@/api/types';
+import type {
+  PlanItemAddRequest,
+  PlanItemUpdateRequest,
+  PlanResponse,
+  PlanStatus,
+} from '@/api/types';
 import { planKeys } from './planQueries';
 
 /**
@@ -167,6 +172,45 @@ function reorderLocally(
       }),
     })),
   };
+}
+
+/**
+ * Empties a day, keeping its meal structure so it can be rebuilt.
+ *
+ * Not a delete of the day itself — the plan is still N days long afterwards, with N sets of empty
+ * meals waiting.
+ */
+export function useClearDay(planId: number) {
+  const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
+
+  return useMutation({
+    mutationFn: (dayIndex: number) =>
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/day/${dayIndex}/item`, { method: 'DELETE' }),
+      ),
+    onSuccess: replacePlan,
+  });
+}
+
+/**
+ * Moves the plan between draft, issued and archived.
+ *
+ * The server accepts any transition in any direction — these are labels on a document rather than
+ * a workflow with gates. The UI offers the step that follows naturally from where the plan is,
+ * which guides without inventing a constraint the server does not have.
+ */
+export function useUpdateStatus(planId: number) {
+  const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
+
+  return useMutation({
+    mutationFn: (status: PlanStatus) =>
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/status`, { method: 'PATCH', body: { status } }),
+      ),
+    onSuccess: replacePlan,
+  });
 }
 
 export function useRemoveItem(planId: number) {

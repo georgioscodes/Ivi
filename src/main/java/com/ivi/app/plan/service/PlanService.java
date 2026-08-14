@@ -207,6 +207,10 @@ public class PlanService {
             } catch (IllegalArgumentException ex) {
                 throw new BusinessException("Unknown plan status: " + status);
             }
+            // Issuing or archiving a plan is a change to it. Without this the "last updated"
+            // column stays at whenever the contents were last edited — stale at precisely the
+            // moment a practitioner looks at it, which is after handing the plan to a client.
+            plan.touch();
             return PlanMapper.toDto(planRepository.save(plan));
         });
     }

@@ -25,6 +25,8 @@ interface PlanViewProps {
   itemActions?: ItemActions;
   /** Reordering within a meal. Receives the meal's complete item list in its new order. */
   onReorder?: (mealId: number, orderedItemIds: number[]) => void;
+  /** Empties a day. Offered only where there is something to empty. */
+  onClearDay?: (day: PlanDayResponse) => void;
 }
 
 export function PlanView({
@@ -33,6 +35,7 @@ export function PlanView({
   pendingMealId,
   itemActions,
   onReorder,
+  onClearDay,
 }: PlanViewProps) {
   return (
     <div className="plan">
@@ -45,6 +48,7 @@ export function PlanView({
           pendingMealId={pendingMealId}
           itemActions={itemActions}
           onReorder={onReorder}
+          onClearDay={onClearDay}
         />
       ))}
     </div>
@@ -58,6 +62,7 @@ function PlanDay({
   pendingMealId,
   itemActions,
   onReorder,
+  onClearDay,
 }: {
   day: PlanDayResponse;
   targets: MacroTotals;
@@ -65,6 +70,7 @@ function PlanDay({
   pendingMealId?: number | null;
   itemActions?: ItemActions;
   onReorder?: PlanViewProps['onReorder'];
+  onClearDay?: PlanViewProps['onClearDay'];
 }) {
   const empty = day.meals.every((meal) => meal.items.length === 0);
 
@@ -75,6 +81,15 @@ function PlanDay({
           {dayLabel(day)}
         </h3>
         <MacroProgress totals={day.totals} percent={day.targetPercent} targets={targets} />
+
+        {/* Offered only when the day has something in it — a control that would do nothing is
+            noise on six other days. */}
+        {onClearDay && !empty ? (
+          <button type="button" className="day__clear" onClick={() => onClearDay(day)}>
+            Καθαρισμός ημέρας
+            <span className="visually-hidden">: {dayLabel(day)}</span>
+          </button>
+        ) : null}
       </header>
 
       {/*

@@ -626,3 +626,35 @@
   border-radius: var(--radius-sm);
   opacity: 0.95;
 }
+
+/* --- Day and plan operations ------------------------------------------------------------------ */
+
+.day__clear {
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.day__clear:hover {
+  color: var(--error);
+  text-decoration: underline;
+}
+
+.plan__header-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.plan__archived-notice {
+  background: var(--grey-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+  font-size: var(--text-sm);
+  max-width: 52rem;
+}

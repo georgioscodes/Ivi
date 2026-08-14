@@ -50,6 +50,42 @@ export function statusLabel(status: PlanStatus | string): string {
   return PLAN_STATUS_LABELS[status] ?? status;
 }
 
+/**
+ * The status change that follows naturally from where the plan is.
+ *
+ * The server permits any transition in any direction, so this guides rather than constrains: one
+ * obvious next step, described in terms of what it means rather than what it is called. A plan
+ * that has been archived can still be reopened — the practitioner may have archived the wrong one.
+ */
+export function nextStatusAction(
+  status: PlanStatus | string,
+): { status: PlanStatus; label: string; explanation: string } | null {
+  if (status === 'DRAFT') {
+    return {
+      status: 'ISSUED',
+      label: 'Έκδοση πλάνου',
+      explanation:
+        'Σημειώνει ότι το πλάνο δόθηκε στον πελάτη. Παραμένει επεξεργάσιμο.',
+    };
+  }
+  if (status === 'ISSUED') {
+    return {
+      status: 'ARCHIVED',
+      label: 'Αρχειοθέτηση',
+      explanation:
+        'Για πλάνα που αντικαταστάθηκαν. Παραμένουν στο ιστορικό του πελάτη.',
+    };
+  }
+  if (status === 'ARCHIVED') {
+    return {
+      status: 'DRAFT',
+      label: 'Επαναφορά σε πρόχειρο',
+      explanation: 'Επιστρέφει το πλάνο σε κατάσταση επεξεργασίας.',
+    };
+  }
+  return null;
+}
+
 /** Whole kilocalories, Greek thousands separator. */
 export function formatKcal(value: number | null | undefined): string {
   return value === null || value === undefined

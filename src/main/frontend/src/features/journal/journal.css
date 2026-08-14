@@ -1,0 +1,128 @@
+/* --- Journal list ----------------------------------------------------------------------------- */
+
+.journal__toolbar {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.journal__search {
+  flex: 1 1 18rem;
+  max-width: 28rem;
+}
+
+.journal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Measured out to about 75 characters. Clinical notes are read, not scanned, and a paragraph the
+   full width of a desktop window loses its place between lines. */
+.entry {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  max-width: 52rem;
+}
+
+.entry__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.entry__date {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0;
+}
+
+.entry__weekday {
+  font-weight: 400;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  margin-inline-start: var(--space-2);
+}
+
+.entry__title {
+  margin: var(--space-1) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.entry__actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+/* The row actions only appear on hover in a lot of interfaces. They do not here: a control that
+   is invisible until pointed at cannot be found by anyone navigating without a pointer. */
+.entry__action:hover {
+  color: var(--ink);
+}
+
+.entry__content {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: var(--leading-normal);
+}
+
+.entry__amended {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+/* --- Entry form ------------------------------------------------------------------------------- */
+
+.journal-form {
+  max-width: 52rem;
+}
+
+.journal-form__row {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.journal-form__row > * {
+  flex: 1 1 14rem;
+}
+
+.journal-form__content {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  font: inherit;
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  resize: vertical;
+}
+
+.journal-form__content:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.journal-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

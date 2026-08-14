@@ -108,7 +108,7 @@ export function ClientDetailPage() {
   );
 }
 
-/** The overview tab. Measurements, plans and journal arrive in Blocks 4, 7 and 8. */
+/** The overview tab. */
 export function ClientOverviewTab() {
   const params = useParams();
   const query = useClient(Number(params.clientId));
@@ -148,9 +148,4 @@ export function ClientOverviewTab() {
       </div>
     </dl>
   );
-}
-
-/** Stands in for a tab whose block has not been built. */
-export function PlaceholderTab({ label }: { label: string }) {
-  return <p className="tabs__placeholder">{label}</p>;
 }

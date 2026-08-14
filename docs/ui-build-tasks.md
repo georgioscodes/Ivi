@@ -562,11 +562,67 @@ shell. Pre-existing, and layout is Block 9's business.
 
 ---
 
-## Block 8 — Journal
+## Block 8 — Journal ✅
 
-- [ ] List per client, newest first, with content search
-- [ ] Entry form, date defaulting to today but editable for a session written up later
-- [ ] Amend and delete
+- [x] List per client, newest first, with search over title and content
+- [x] Entry form, date defaulting to today but editable for a session written up later
+- [x] Amend and delete
+
+The consultation record: what the client reported, what was agreed, what to watch. The sharp
+difference from the plan notes built in 7h is the audience — **none of this is ever shown to the
+client**, where plan notes exist precisely to be printed and handed over.
+
+Entries render as cards in an ordered list rather than table rows. An entry is prose of no fixed
+length, and the date it belongs to is its heading rather than a column beside it. Text is held to
+about 75 characters a line: clinical notes are read, not scanned.
+
+**The search was broken for Greek, and quietly.** Two entries both containing the word "διατροφή",
+one lowercase and one in a capitalised heading — and no search term found both. Every term found
+exactly one. Greek is written *without* accents in capitals, so lowercasing a heading gives
+"διατροφη" and the accented word never matches it. Searching "προσοχή", spelling the word
+correctly, returned nothing at all. Search still returned *some* rows, which is what makes this
+the bad kind of defect: it looks like it works until an entry the practitioner is certain they
+wrote cannot be found. Both sides are folded now — `GreekText` for the term, `translate()` for the
+stored text — and the browser check drives it both ways round.
+
+Three more, from the same query:
+
+- The **title was never searched**, so an entry titled "Επανέλεγχος" could not be found by its
+  own title.
+- The list ordered by `entry_date` alone. Dates repeat, and an unstable sort under pagination can
+  show one entry twice and omit another. Tie-broken on id.
+- Replacing the derived `Containing` finder **lost its wildcard escaping** — my own regression,
+  caught by re-running the probe. A typed `%` would have matched every entry. Not injection, but
+  a search box that means something other than what was typed.
+
+**Search is debounced, and the usual reason is the lesser one here.** Every list read writes a row
+to the audit log, because reading someone's clinical notes is an access that has to be recorded.
+One request per keystroke would put eight rows in that log for one word typed, burying the real
+accesses under a trail of half-typed prefixes. Verified in the browser: one read per settled term.
+
+**Two date traps, both about time zones rather than formatting.** `toISOString().slice(0, 10)` is
+the obvious way to default the date field and is wrong — it converts to UTC first, so a
+consultation written up at 01:00 in Athens would default to *yesterday*. And `new Date('2026-08-01')`
+parses as UTC midnight, which renders as 31 July anywhere west of Greenwich. Both are built from
+local parts instead, with the Athens case pinned in a test that sets `TZ`.
+
+**A native date input ignores the page's language.** It renders in the *browser's* locale, so on
+an en-US browser the field reads `08/07/2026` — July or August depending on who is reading. Seen
+in a screenshot rather than reasoned about. Nothing in the page can change that rendering, so the
+date is echoed underneath in words: "Παρασκευή, 14 Αυγούστου 2026".
+
+Amended entries are marked. A journal is a clinical record, and that an entry was changed after it
+was first written is part of it.
+
+**Recorded, not fixed.** The journal *list* endpoint answers a cross-tenant read with 400 "No such
+client" where this project's rule is 404. It is not a disclosure — measured side by side, a real
+client belonging to another practitioner and a client id that does not exist return byte-identical
+responses, and the single-entry and delete paths both correctly return 404. It is a consistency
+defect in one endpoint's status code, and changing it touches the create path too, so it wants its
+own change rather than a quiet edit here.
+
+**Also recorded:** the food catalogue search has both defects this block fixed — the accent folding
+and the unescaped wildcard — in a surface used far more often than this one.
 
 ## Block 9 — Quality
 

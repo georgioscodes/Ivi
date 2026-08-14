@@ -3,17 +3,14 @@ import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-do
 import { AppShell } from '@/app/AppShell';
 import { GuestOnlyRoute, ProtectedRoute } from '@/app/ProtectedRoute';
 import { Empty } from '@/components/states';
-import {
-  ClientDetailPage,
-  ClientOverviewTab,
-  PlaceholderTab,
-} from '@/features/client/ClientDetailPage';
+import { ClientDetailPage, ClientOverviewTab } from '@/features/client/ClientDetailPage';
 import { ClientFormPage } from '@/features/client/ClientFormPage';
 import { ClientListPage } from '@/features/client/ClientListPage';
 import { FoodCataloguePage } from '@/features/food/FoodCataloguePage';
 import { FoodDetailPage } from '@/features/food/FoodDetailPage';
 import { FoodFormPage } from '@/features/food/FoodFormPage';
 import { SuggestionsPage } from '@/features/food/SuggestionsPage';
+import { JournalTab } from '@/features/journal/JournalTab';
 import { MeasurementsTab } from '@/features/measurement/MeasurementsTab';
 import { TargetsTab } from '@/features/nutrition/TargetsTab';
 import { PlanPage } from '@/features/plan/PlanPage';
@@ -71,10 +68,7 @@ export function App() {
             <Route path="measurements" element={<MeasurementsTab />} />
             <Route path="targets" element={<TargetsTab />} />
             <Route path="plans" element={<PlansTab />} />
-            <Route
-              path="journal"
-              element={<PlaceholderTab label="Το ημερολόγιο έρχεται σε επόμενο βήμα." />}
-            />
+            <Route path="journal" element={<JournalTab />} />
           </Route>
 
           {/*

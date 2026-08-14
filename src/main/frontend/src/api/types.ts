@@ -446,3 +446,34 @@ export interface MeasurementSummaryResponse {
   bmi: number | null;
   bmiCategory: string | null;
 }
+
+/* --- Journal ---------------------------------------------------------------------------------
+ *
+ * The practitioner's record of a consultation. Unlike plan notes, none of this is ever shown to
+ * the client — it is clinical narrative about a named person, squarely within Article 9.
+ */
+
+export interface JournalEntryResponse {
+  id: number;
+  clientId: number;
+  /** When the consultation happened, which is not when it was written up. */
+  entryDate: IsoDate;
+  title: string | null;
+  content: string;
+  createdAt: IsoInstant;
+  updatedAt: IsoInstant | null;
+}
+
+export interface JournalEntryCreateRequest {
+  clientId: number;
+  /** Omitted means today, which the server fills in. */
+  entryDate?: IsoDate;
+  title?: string;
+  content: string;
+}
+
+export interface JournalEntryUpdateRequest {
+  entryDate?: IsoDate;
+  title?: string;
+  content: string;
+}

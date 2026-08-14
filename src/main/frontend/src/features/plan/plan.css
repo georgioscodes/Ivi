@@ -265,3 +265,76 @@
   gap: var(--space-3);
   margin-top: var(--space-5);
 }
+
+/* --- Macro progress bars --------------------------------------------------------------------- */
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3) var(--space-5);
+  flex: 1 1 28rem;
+}
+
+.bar__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: 2px;
+}
+
+.bar__label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.bar__value {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar__unit,
+.bar__target {
+  font-weight: 400;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.bar__track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--grey-200);
+  overflow: hidden;
+}
+
+.bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--duration-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar__fill {
+    transition: none;
+  }
+}
+
+.bar__pct {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Colour is reinforcement; the label beside it is what carries the meaning. */
+.bar--over .bar__pct {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.bar__over-label {
+  white-space: nowrap;
+}

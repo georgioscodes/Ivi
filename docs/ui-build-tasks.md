@@ -332,14 +332,21 @@ The calculator produces a recommendation; a plan records what the practitioner d
 two are allowed to differ. Carrying the values across is a real convenience and belongs with the
 rest of the builder work.
 
-### 7b. Progress bars
+### 7b. Progress bars ✅
 
-- [ ] Bar component taking a server-supplied percentage; no arithmetic
-- [ ] Four bars per day: energy, protein, carbohydrate, fat
-- [ ] Over-target state using the semantic error token, **plus** a text label — colour is never the
-      only carrier
-- [ ] Numeric value beside every bar
-- [ ] Categorical colours for the four macros from the chart scale, not the brand five
+- [x] Bar component taking a server-supplied percentage; no arithmetic. A test feeds it totals and
+      percentages that disagree and asserts the server's figure is the one drawn
+- [x] Four bars per day: energy, protein, carbohydrate, fat
+- [x] Over-target state using the semantic error token, **plus** a text label and `aria-valuetext`
+      — colour is never the only carrier
+- [x] Numeric value beside every bar, with its target alongside
+- [x] Categorical colours for the four macros from the validated chart scale, not the brand five
+
+No chart library: a bar is a div with a width, and Recharts would add a hundred kilobytes to draw
+a rectangle.
+
+The fill is capped at 100% while the number is not. A 180% day drawn at 180% paints over the
+layout beside it; the figure and the "πάνω από τον στόχο" label carry the excess instead.
 
 ### 7c. Adding food
 

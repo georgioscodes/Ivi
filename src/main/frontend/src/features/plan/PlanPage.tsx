@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import type { PlanDayResponse, PlanMealResponse } from '@/api/types';
+import type { PlanDayResponse, PlanItemResponse, PlanMealResponse } from '@/api/types';
+import { messageFor } from '@/api/messages';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, Loading } from '@/components/states';
 import { useClient } from '@/features/client/clientQueries';
+import { strings } from '@/strings';
 import { AddFoodDialog } from './AddFoodDialog';
 import { PlanView } from './PlanView';
+import { RenameItemDialog } from './RenameItemDialog';
 import { dayLabel, formatGrams, formatKcal, mealLabel, statusLabel } from './planLabels';
-import { useAddItem } from './planMutations';
+import { useAddItem, useRemoveItem, useUpdateItem } from './planMutations';
 import { usePlan } from './planQueries';
 import './plan.css';
 
@@ -25,6 +29,13 @@ export function PlanPage() {
   const plan = usePlan(planId);
   const client = useClient(clientId);
   const addItem = useAddItem(planId);
+  const updateItem = useUpdateItem(planId);
+  const removeItem = useRemoveItem(planId);
+
+  const [renaming, setRenaming] = useState<PlanItemResponse | null>(null);
+  const [removing, setRemoving] = useState<PlanItemResponse | null>(null);
+  // Which item is mid-request, so its row can say so and its controls stop accepting input.
+  const [pendingItemId, setPendingItemId] = useState<number | null>(null);
 
   // Which meal the food picker is filling. Held here rather than inside the dialog so the plan
   // view can mark that meal pending while the request is in flight.
@@ -109,10 +120,86 @@ export function PlanPage() {
         </dl>
       </section>
 
+      {/* An item edit that failed says so above the plan; the row keeps the last confirmed
+          figures, which are still what the server holds. */}
+      {updateItem.error ? (
+        <p className="form-error" role="alert">
+          {messageFor(updateItem.error)}
+        </p>
+      ) : null}
+      {removeItem.error ? (
+        <p className="form-error" role="alert">
+          {messageFor(removeItem.error)}
+        </p>
+      ) : null}
+
       <PlanView
         plan={data}
         onAddFood={(day, meal) => setTarget({ day, meal })}
         pendingMealId={addItem.isPending ? (target?.meal.id ?? null) : null}
+        itemActions={{
+          pendingItemId,
+          onRename: setRenaming,
+          onRemove: setRemoving,
+          onQuantityChange: (itemId, quantity) => {
+            setPendingItemId(itemId);
+            updateItem.mutate(
+              { itemId, body: { quantity } },
+              { onSettled: () => setPendingItemId(null) },
+            );
+          },
+        }}
+      />
+
+      <RenameItemDialog
+        item={renaming}
+        busy={updateItem.isPending}
+        error={renaming ? updateItem.error : null}
+        onClose={() => {
+          setRenaming(null);
+          updateItem.reset();
+        }}
+        onSave={(nameOverride) => {
+          if (!renaming) {
+            return;
+          }
+          setPendingItemId(renaming.id);
+          updateItem.mutate(
+            { itemId: renaming.id, body: { nameOverride } },
+            {
+              onSuccess: () => setRenaming(null),
+              onSettled: () => setPendingItemId(null),
+            },
+          );
+        }}
+      />
+
+      {/*
+        A confirmation rather than an undo, deliberately. An "undo" here could only re-add the
+        food, which takes a *fresh* composition snapshot from the catalogue — so if the
+        practitioner had overridden that food in between, the restored line would not be the one
+        they removed. An undo that silently substitutes different numbers is worse than a prompt.
+      */}
+      <ConfirmDialog
+        open={removing !== null}
+        destructive
+        busy={removeItem.isPending}
+        title="Αφαίρεση τροφίμου"
+        body={`Το «${removing?.name ?? ''}» θα αφαιρεθεί από το πλάνο. Η ενέργεια δεν αναιρείται.`}
+        confirmLabel={strings.common.delete}
+        onCancel={() => setRemoving(null)}
+        onConfirm={() => {
+          if (!removing) {
+            return;
+          }
+          setPendingItemId(removing.id);
+          removeItem.mutate(removing.id, {
+            onSettled: () => {
+              setPendingItemId(null);
+              setRemoving(null);
+            },
+          });
+        }}
       />
 
       <AddFoodDialog

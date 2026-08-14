@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { request } from '@/api/http';
-import type { PlanItemAddRequest, PlanResponse } from '@/api/types';
+import type { PlanItemAddRequest, PlanItemUpdateRequest, PlanResponse } from '@/api/types';
 import { planKeys } from './planQueries';
 
 /**
@@ -27,6 +27,34 @@ export function useAddItem(planId: number) {
   return useMutation({
     mutationFn: ({ mealId, body }: { mealId: number; body: PlanItemAddRequest }) =>
       request<PlanResponse>(`/plan/${planId}/meal/${mealId}/item`, { method: 'POST', body }),
+    onSuccess: replacePlan,
+  });
+}
+
+/**
+ * Changes an item's quantity, its printed name, or both.
+ *
+ * The request is a partial update and the server treats it as one: a null field is left alone,
+ * so sending only a quantity cannot wipe a name the practitioner set earlier. An *empty* name is
+ * different from an absent one — it clears the override and restores the catalogue name — which
+ * is what makes "restore the original" expressible at all.
+ */
+export function useUpdateItem(planId: number) {
+  const replacePlan = useReplacePlan(planId);
+
+  return useMutation({
+    mutationFn: ({ itemId, body }: { itemId: number; body: PlanItemUpdateRequest }) =>
+      request<PlanResponse>(`/plan/${planId}/item/${itemId}`, { method: 'PUT', body }),
+    onSuccess: replacePlan,
+  });
+}
+
+export function useRemoveItem(planId: number) {
+  const replacePlan = useReplacePlan(planId);
+
+  return useMutation({
+    mutationFn: (itemId: number) =>
+      request<PlanResponse>(`/plan/${planId}/item/${itemId}`, { method: 'DELETE' }),
     onSuccess: replacePlan,
   });
 }

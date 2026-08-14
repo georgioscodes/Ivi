@@ -1,6 +1,7 @@
 import type { MacroTotals, PlanDayResponse, PlanMealResponse, PlanResponse } from '@/api/types';
+import { ItemRow, type ItemActions } from './ItemRow';
 import { MacroProgress } from './MacroProgress';
-import { dayLabel, formatKcal, mealLabel, portionSummary } from './planLabels';
+import { dayLabel, formatKcal, mealLabel } from './planLabels';
 import './plan.css';
 
 /**
@@ -19,9 +20,11 @@ interface PlanViewProps {
   onAddFood?: (day: PlanDayResponse, meal: PlanMealResponse) => void;
   /** The meal currently waiting on a request, so it can show as pending rather than as done. */
   pendingMealId?: number | null;
+  /** Per-item editing. Omitted leaves the items read-only. */
+  itemActions?: ItemActions;
 }
 
-export function PlanView({ plan, onAddFood, pendingMealId }: PlanViewProps) {
+export function PlanView({ plan, onAddFood, pendingMealId, itemActions }: PlanViewProps) {
   return (
     <div className="plan">
       {plan.days.map((day) => (
@@ -31,6 +34,7 @@ export function PlanView({ plan, onAddFood, pendingMealId }: PlanViewProps) {
           targets={plan.targets}
           onAddFood={onAddFood}
           pendingMealId={pendingMealId}
+          itemActions={itemActions}
         />
       ))}
     </div>
@@ -42,11 +46,13 @@ function PlanDay({
   targets,
   onAddFood,
   pendingMealId,
+  itemActions,
 }: {
   day: PlanDayResponse;
   targets: MacroTotals;
   onAddFood?: PlanViewProps['onAddFood'];
   pendingMealId?: number | null;
+  itemActions?: ItemActions;
 }) {
   const empty = day.meals.every((meal) => meal.items.length === 0);
 
@@ -71,6 +77,7 @@ function PlanDay({
             meal={meal}
             onAddFood={onAddFood ? () => onAddFood(day, meal) : undefined}
             pending={pendingMealId === meal.id}
+            itemActions={itemActions}
           />
         ))}
       </div>
@@ -86,10 +93,12 @@ function Meal({
   meal,
   onAddFood,
   pending,
+  itemActions,
 }: {
   meal: PlanMealResponse;
   onAddFood?: () => void;
   pending?: boolean;
+  itemActions?: ItemActions;
 }) {
   return (
     <section
@@ -114,21 +123,7 @@ function Meal({
       ) : (
         <ul className="meal__items">
           {meal.items.map((item) => (
-            <li className="item" key={item.id}>
-              <span className="item__name">
-                {item.name}
-                {/* The food was deleted from the catalogue after this was prescribed. The item
-                    stands, because it is a record of what was recommended. */}
-                {item.foodId === null ? (
-                  <span className="item__orphan" title="Το τρόφιμο δεν υπάρχει πλέον στον κατάλογο">
-                    {' '}
-                    (εκτός καταλόγου)
-                  </span>
-                ) : null}
-              </span>
-              <span className="item__portion">{portionSummary(item)}</span>
-              <span className="item__energy">{formatKcal(item.energyKcal)} kcal</span>
-            </li>
+            <ItemRow key={item.id} item={item} actions={itemActions} />
           ))}
         </ul>
       )}

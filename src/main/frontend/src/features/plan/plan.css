@@ -481,3 +481,77 @@
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
+
+/* --- Editing items --------------------------------------------------------------------------- */
+
+.item__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.item__line--quantity {
+  justify-content: flex-start;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
+.item__quantity {
+  width: 3.5rem;
+  padding: 1px var(--space-1);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.item__quantity:disabled {
+  background: var(--grey-50);
+  color: var(--text-secondary);
+}
+
+.item__actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.item__action {
+  background: none;
+  border: none;
+  padding: 0 var(--space-1);
+  color: var(--grey-500);
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.item__action:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.item__action--remove:hover:not(:disabled) {
+  color: var(--error);
+}
+
+.item__action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The row stays legible while saving — the figures shown are still the last the server
+   confirmed, so dimming them to nothing would hide information that is still true. */
+.item--pending {
+  opacity: 0.75;
+}
+
+.item__saving {
+  font-style: italic;
+}
+
+.rename__reset {
+  margin-inline-end: auto;
+  font-size: var(--text-sm);
+}

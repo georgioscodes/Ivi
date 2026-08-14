@@ -376,13 +376,27 @@ test asserts no option can ever carry an empty portion id.
 The dialog closes on success only. A failed add keeps it open with the message, so the
 practitioner does not have to find the food again to retry.
 
-### 7d. Editing items
+### 7d. Editing items ✅
 
-- [ ] Quantity edit, debounced, committed on pause or blur — not per keystroke
-- [ ] Pending indicator on the row being saved; the old number stays until the new one arrives
-- [ ] Name override for print
-- [ ] Remove item, with the whole plan replaced from the response
-- [ ] Undo for removal, or a confirmation — decide which; removal is currently irreversible
+- [x] Quantity edit, debounced at 600ms, committed on pause, on blur, or on Enter — not per
+      keystroke. Longer than the 300ms used for search: a search firing early is a wasted request,
+      where a quantity firing early writes a value into a plan and moves four totals
+- [x] Pending indicator on the row being saved; the old number stays until the new one arrives
+- [x] Name override for print
+- [x] Remove item, with the whole plan replaced from the response
+- [x] **Decided: a confirmation, not an undo.** An undo here could only re-add the food, which
+      takes a *fresh* composition snapshot from the catalogue — so if the practitioner had
+      overridden that food in between, the restored line would carry different numbers from the
+      one they removed. An undo that silently substitutes values is worse than a prompt
+
+A blank or zero quantity is not a request to set the quantity to zero: the field restores the
+last confirmed value and sends nothing. An unchanged value sends nothing either, so tabbing
+through a row does not write to the plan.
+
+**A gap worth closing in the API.** `PlanItemResponse.name` is the *resolved* display name, and
+neither the original food name nor the override is exposed separately — so the rename dialog
+cannot say "currently overridden from X", only offer to restore. Adding `nameOverride` to the DTO
+would let that be stated rather than implied.
 
 ### 7e. Reordering
 

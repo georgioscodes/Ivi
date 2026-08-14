@@ -295,18 +295,42 @@ page uses, falling back to the id. Adding the name to the response would be the 
 
 The largest block. Sequenced so each step is usable before the next begins.
 
-### 7a. Read-only plan view
+### 7a. Read-only plan view ✅
 
-Everything else builds on rendering the aggregate correctly.
+- [x] Route `/client/{clientId}/plan/{planId}`, fetch `GET /plan/{id}`
+- [x] Day → meal → item tree from the response
+- [x] Day labels: practitioner override, else weekday name, else "Ημέρα N" — mirroring the export,
+      including the rule that stops naming weekdays past day seven rather than producing a second
+      Δευτέρα halfway through a fortnight
+- [x] Meal labels in Greek, asserted equal to `PlanExportService.MEAL_LABELS`
+- [x] Item row: name, portion label, quantity, grams, kcal — all as returned
+- [x] Meal totals, day totals, day percentage of target, plan daily average — all as returned
+- [x] Empty meal and empty plan states
+- [x] Plan list per client, and creation from a client plus targets
 
-- [ ] Route `/client/{clientId}/plan/{planId}`, fetch `GET /plan/{id}`
-- [ ] Day → meal → item tree from the response
-- [ ] Day labels: practitioner override, else weekday name, else "Ημέρα N" — mirroring the export
-- [ ] Meal labels in Greek from a shared map
-- [ ] Item row: name, portion label, quantity, grams, kcal — all as returned
-- [ ] Meal totals, day totals, day percentage of target, plan daily average — all as returned
-- [ ] Empty meal and empty plan states
-- [ ] Plan list per client, and creation from a client plus targets
+Verified against the running application: a seeded day's energy on screen matches the figure the
+server returned for it exactly. Not one number in this view is computed client-side.
+
+The five meal slots render even on a day with nothing in them — they are the shape of the day and
+the place food gets added, so collapsing them would leave a new plan with nowhere to start. (The
+server scaffolds five; `EVENING_SNACK` exists as a type but is not created.)
+
+Two layout defects, both found by looking at the render rather than the DOM.
+
+**Meal separators bled through empty grid tracks.** Drawing them as a 1px gap over a coloured
+container background is tidier to write and wrong here: with `auto-fill` the track count comes
+from the available width, so five meals in a four-column row leave three empty tracks whose
+background shows as blank slabs. Now a border per meal.
+
+**An unscoped `section + section` rule in `measurement.css` reached the plan builder**, adding
+32px above four of the five meals and leaving the first hanging above the row it belonged to. A
+global adjacent-sibling selector in a feature stylesheet is a trap for whatever gets built next;
+it is now scoped to its own tab.
+
+Targets are entered when a plan is created rather than carried over from the Στόχοι calculator.
+The calculator produces a recommendation; a plan records what the practitioner decided, and the
+two are allowed to differ. Carrying the values across is a real convenience and belongs with the
+rest of the builder work.
 
 ### 7b. Progress bars
 

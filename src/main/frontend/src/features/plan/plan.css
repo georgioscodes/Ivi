@@ -1,0 +1,267 @@
+.plan__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.plan__breadcrumb {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.plan__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.plan__meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* --- Targets --------------------------------------------------------------------------------- */
+
+.plan__targets {
+  margin-bottom: var(--space-6);
+}
+
+.plan__target-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.plan__target-grid + .plan__target-grid {
+  margin-top: var(--space-3);
+}
+
+.plan__target-grid--average {
+  background: var(--grey-50);
+}
+
+.plan__target-grid dt {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.plan__target-grid dd {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Days ------------------------------------------------------------------------------------ */
+
+.plan {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.day {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.day__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  background: var(--grey-50);
+  border-bottom: 1px solid var(--border);
+}
+
+.day__title {
+  font-size: var(--text-base);
+}
+
+.day__empty {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/*
+ * The day's meals across the width, wrapping as it narrows — a tablet is a supported way of
+ * working and a day has to stay readable without horizontal scrolling.
+ *
+ * Separators are borders on each meal, not a 1px gap over a coloured container background. The
+ * background trick is tidier to write and wrong here: with auto-fill the track count comes from
+ * the available width, so five meals in a four-column row leave three empty tracks in row two —
+ * and the container colour shows straight through them as large blank slabs.
+ */
+.day__meals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.meal {
+  background: var(--surface-raised);
+  padding: var(--space-3) var(--space-4);
+  border-inline-end: 1px solid var(--border);
+  border-block-start: 1px solid var(--border);
+}
+
+/* The day already has a border and clips its children, so the trailing edge is covered. */
+.meal:last-child {
+  border-inline-end: none;
+}
+
+.meal__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.meal__title {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.meal__time {
+  margin-inline-start: var(--space-2);
+  font-weight: 400;
+}
+
+.meal__total {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meal__empty {
+  color: var(--grey-400);
+  font-size: var(--text-sm);
+}
+
+.meal__items {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.item {
+  display: grid;
+  gap: 1px;
+  font-size: var(--text-sm);
+}
+
+.item__name {
+  font-weight: 600;
+}
+
+.item__orphan {
+  font-weight: 400;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.item__portion,
+.item__energy {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Macro summary --------------------------------------------------------------------------- */
+
+.macro-summary {
+  display: flex;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.macro-summary__item {
+  display: grid;
+  gap: 1px;
+}
+
+.macro-summary__item dt {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.macro-summary__item dd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.macro-summary__value {
+  font-weight: 600;
+}
+
+.macro-summary__unit {
+  font-weight: 400;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.macro-summary__pct {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* --- Status ---------------------------------------------------------------------------------- */
+
+.status--draft {
+  color: var(--text-secondary);
+}
+
+.status--issued {
+  color: var(--success);
+}
+
+.status--archived {
+  color: var(--grey-500);
+}
+
+/* --- Create form ----------------------------------------------------------------------------- */
+
+.plan-form {
+  max-width: 46rem;
+}
+
+.plan-form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-4);
+}
+
+.plan-form__heading {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: var(--space-5) 0 var(--space-1);
+}
+
+.plan-form__hint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.plan-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

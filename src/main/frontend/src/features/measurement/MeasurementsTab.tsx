@@ -70,7 +70,7 @@ export function MeasurementsTab() {
   const measuredTypes = [...new Set((summary.data?.latest ?? []).map((m) => m.typeCode))];
 
   return (
-    <>
+    <div className="measurements">
       <div className="measurement__actions">
         <button
           type="button"
@@ -291,7 +291,7 @@ export function MeasurementsTab() {
           remove.mutate(deleting, { onSettled: () => setDeleting(null) })
         }
       />
-    </>
+    </div>
   );
 }
 

@@ -10,8 +10,13 @@
   flex-wrap: wrap;
 }
 
-section + section,
-.chart-section + section {
+/*
+ * Scoped to this tab. As a bare `section + section` this reached every adjacent sibling section
+ * in the application — including each meal in the plan builder, which put a 32px gap above four
+ * of the five and left the first one hanging above the row it belonged to.
+ */
+.measurements section + section,
+.measurements .chart-section + section {
   margin-top: var(--space-6);
 }
 

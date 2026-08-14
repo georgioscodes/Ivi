@@ -166,6 +166,121 @@ export interface MeasurementSeriesResponse {
   totalChange: number | null;
 }
 
+// --- Plans -------------------------------------------------------------------------------------
+
+export type MealType =
+  | 'BREAKFAST'
+  | 'MORNING_SNACK'
+  | 'LUNCH'
+  | 'AFTERNOON_SNACK'
+  | 'DINNER'
+  | 'EVENING_SNACK';
+
+export type PlanStatus = 'DRAFT' | 'ISSUED' | 'ARCHIVED';
+
+export interface MacroTotals {
+  energyKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+}
+
+/**
+ * A line in a meal.
+ *
+ * Every figure is the server's, computed from a per-100g snapshot taken when the item was added.
+ * `totalGrams` is `portionGrams × quantity`, and the four nutrient values follow from it — the
+ * client multiplies nothing.
+ */
+export interface PlanItemResponse {
+  id: number;
+  /** Null once the food has been deleted. The item survives; the prescription still happened. */
+  foodId: number | null;
+  name: string;
+  portionLabel: string | null;
+  portionGrams: number;
+  quantity: number;
+  totalGrams: number;
+  energyKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+  sortOrder: number;
+}
+
+export interface PlanMealResponse {
+  id: number;
+  mealType: MealType | (string & {});
+  timeLabel: string | null;
+  sortOrder: number;
+  items: PlanItemResponse[];
+  totals: MacroTotals;
+}
+
+export interface PlanDayResponse {
+  id: number;
+  /** Zero-based. Day 0 is Monday when a plan is a literal week. */
+  dayIndex: number;
+  /** The practitioner's own label, or null. Not a resolved heading — see `dayLabel`. */
+  label: string | null;
+  meals: PlanMealResponse[];
+  totals: MacroTotals;
+  /** Percent of the plan's target, per macro. Server-computed; never derived here. */
+  targetPercent: MacroTotals;
+}
+
+export interface PlanResponse {
+  id: number;
+  clientId: number;
+  name: string;
+  status: PlanStatus | (string & {});
+  targets: MacroTotals;
+  basis: string | null;
+  activityFactor: number | null;
+  notes: string | null;
+  days: PlanDayResponse[];
+  dailyAverage: MacroTotals;
+  /** Optimistic lock. A stale value is what turns a concurrent edit into a 409 rather than a
+   *  silent overwrite. */
+  version: number;
+  createdAt: IsoInstant;
+  updatedAt: IsoInstant;
+}
+
+export interface PlanSummaryResponse {
+  id: number;
+  clientId: number;
+  name: string;
+  status: PlanStatus | (string & {});
+  targetKcal: number;
+  dayCount: number;
+  createdAt: IsoInstant;
+  updatedAt: IsoInstant;
+}
+
+export interface PlanCreateRequest {
+  clientId: number;
+  name: string;
+  targetKcal: number;
+  targetProteinG: number;
+  targetCarbohydrateG: number;
+  targetFatG: number;
+  basis?: string;
+  activityFactor?: number;
+  dayCount: number;
+}
+
+export interface PlanItemAddRequest {
+  foodId: number;
+  portionId?: number;
+  quantity: number;
+}
+
+export interface PlanItemUpdateRequest {
+  quantity?: number;
+  nameOverride?: string;
+}
+
 // --- Food catalogue ----------------------------------------------------------------------------
 
 export type FoodCategory = 'FRESH' | 'CARBOHYDRATE' | 'PROTEIN' | 'FAT' | 'COMPOSITE';

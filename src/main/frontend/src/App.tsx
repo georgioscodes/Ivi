@@ -16,6 +16,8 @@ import { FoodFormPage } from '@/features/food/FoodFormPage';
 import { SuggestionsPage } from '@/features/food/SuggestionsPage';
 import { MeasurementsTab } from '@/features/measurement/MeasurementsTab';
 import { TargetsTab } from '@/features/nutrition/TargetsTab';
+import { PlanPage } from '@/features/plan/PlanPage';
+import { PlansTab } from '@/features/plan/PlansTab';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { useSessionExpiryHandler } from '@/session/session';
@@ -60,14 +62,15 @@ export function App() {
           <Route path="/client/new" element={<ClientFormPage mode="create" />} />
           <Route path="/client/:clientId/edit" element={<ClientFormPage mode="edit" />} />
 
+          {/* Its own page, not a tab panel: building a plan is the longest task in the
+              application and it needs the full width. */}
+          <Route path="/client/:clientId/plan/:planId" element={<PlanPage />} />
+
           <Route path="/client/:clientId" element={<ClientDetailPage />}>
             <Route index element={<ClientOverviewTab />} />
             <Route path="measurements" element={<MeasurementsTab />} />
             <Route path="targets" element={<TargetsTab />} />
-            <Route
-              path="plans"
-              element={<PlaceholderTab label="Τα πλάνα διατροφής έρχονται σε επόμενο βήμα." />}
-            />
+            <Route path="plans" element={<PlansTab />} />
             <Route
               path="journal"
               element={<PlaceholderTab label="Το ημερολόγιο έρχεται σε επόμενο βήμα." />}

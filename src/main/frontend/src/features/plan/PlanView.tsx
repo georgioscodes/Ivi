@@ -1,6 +1,7 @@
 import type { MacroTotals, PlanDayResponse, PlanMealResponse, PlanResponse } from '@/api/types';
-import { ItemRow, type ItemActions } from './ItemRow';
+import { type ItemActions } from './ItemRow';
 import { MacroProgress } from './MacroProgress';
+import { SortableItems } from './SortableItems';
 import { dayLabel, formatKcal, mealLabel } from './planLabels';
 import './plan.css';
 
@@ -22,9 +23,17 @@ interface PlanViewProps {
   pendingMealId?: number | null;
   /** Per-item editing. Omitted leaves the items read-only. */
   itemActions?: ItemActions;
+  /** Reordering within a meal. Receives the meal's complete item list in its new order. */
+  onReorder?: (mealId: number, orderedItemIds: number[]) => void;
 }
 
-export function PlanView({ plan, onAddFood, pendingMealId, itemActions }: PlanViewProps) {
+export function PlanView({
+  plan,
+  onAddFood,
+  pendingMealId,
+  itemActions,
+  onReorder,
+}: PlanViewProps) {
   return (
     <div className="plan">
       {plan.days.map((day) => (
@@ -35,6 +44,7 @@ export function PlanView({ plan, onAddFood, pendingMealId, itemActions }: PlanVi
           onAddFood={onAddFood}
           pendingMealId={pendingMealId}
           itemActions={itemActions}
+          onReorder={onReorder}
         />
       ))}
     </div>
@@ -47,12 +57,14 @@ function PlanDay({
   onAddFood,
   pendingMealId,
   itemActions,
+  onReorder,
 }: {
   day: PlanDayResponse;
   targets: MacroTotals;
   onAddFood?: PlanViewProps['onAddFood'];
   pendingMealId?: number | null;
   itemActions?: ItemActions;
+  onReorder?: PlanViewProps['onReorder'];
 }) {
   const empty = day.meals.every((meal) => meal.items.length === 0);
 
@@ -78,6 +90,7 @@ function PlanDay({
             onAddFood={onAddFood ? () => onAddFood(day, meal) : undefined}
             pending={pendingMealId === meal.id}
             itemActions={itemActions}
+            onReorder={onReorder}
           />
         ))}
       </div>
@@ -94,11 +107,13 @@ function Meal({
   onAddFood,
   pending,
   itemActions,
+  onReorder,
 }: {
   meal: PlanMealResponse;
   onAddFood?: () => void;
   pending?: boolean;
   itemActions?: ItemActions;
+  onReorder?: PlanViewProps['onReorder'];
 }) {
   return (
     <section
@@ -121,11 +136,11 @@ function Meal({
         // practitioner scanning for what is missing needs to see the gap.
         <p className="meal__empty">—</p>
       ) : (
-        <ul className="meal__items">
-          {meal.items.map((item) => (
-            <ItemRow key={item.id} item={item} actions={itemActions} />
-          ))}
-        </ul>
+        <SortableItems
+          items={meal.items}
+          actions={itemActions}
+          onReorder={onReorder ? (ids) => onReorder(meal.id, ids) : undefined}
+        />
       )}
 
       {/*

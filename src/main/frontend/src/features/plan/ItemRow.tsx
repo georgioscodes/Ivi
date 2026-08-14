@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, HTMLAttributes, Ref } from 'react';
 
 import type { PlanItemResponse } from '@/api/types';
 import { formatGrams, formatKcal, formatQuantity } from './planLabels';
@@ -10,6 +11,16 @@ export interface ItemActions {
   onRemove: (item: PlanItemResponse) => void;
   /** The item currently waiting on a request. */
   pendingItemId: number | null;
+}
+
+export interface ReorderProps {
+  /** Zero-based, so the buttons know which ends to disable. */
+  position: number;
+  total: number;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  /** dnd-kit's listeners and attributes, applied to the handle rather than the whole row. */
+  handleProps: HTMLAttributes<HTMLElement>;
 }
 
 /**
@@ -26,15 +37,38 @@ export interface ItemActions {
 export function ItemRow({
   item,
   actions,
+  reorder,
+  dragging,
+  style,
+  ref,
 }: {
   item: PlanItemResponse;
   actions?: ItemActions;
+  reorder?: ReorderProps;
+  dragging?: boolean;
+  style?: CSSProperties;
+  ref?: Ref<HTMLLIElement>;
 }) {
   const pending = actions?.pendingItemId === item.id;
 
   return (
-    <li className={`item${pending ? ' item--pending' : ''}`} aria-busy={pending || undefined}>
+    <li
+      ref={ref}
+      style={style}
+      className={`item${pending ? ' item--pending' : ''}${dragging ? ' item--dragging' : ''}`}
+      aria-busy={pending || undefined}
+    >
       <div className="item__line">
+        {reorder ? (
+          <span
+            className="item__grip"
+            {...reorder.handleProps}
+            aria-label={`Μετακίνηση: ${item.name}`}
+            title="Σύρετε για αναδιάταξη"
+          >
+            <span aria-hidden="true">⠿</span>
+          </span>
+        ) : null}
         <span className="item__name">
           {item.name}
           {/* The food was deleted from the catalogue after this was prescribed. The item stands,
@@ -49,6 +83,36 @@ export function ItemRow({
 
         {actions ? (
           <span className="item__actions">
+            {/*
+              Explicit move buttons alongside the drag handle. dnd-kit's keyboard mode works, but
+              nothing on screen announces it; two buttons need no explaining and are what a
+              switch user, a screen-reader user, or anyone with three items in a narrow column
+              will actually reach for.
+            */}
+            {reorder ? (
+              <>
+                <button
+                  type="button"
+                  className="item__action"
+                  onClick={reorder.onMoveUp}
+                  disabled={pending || reorder.position === 0}
+                  title="Μετακίνηση πάνω"
+                >
+                  <span aria-hidden="true">↑</span>
+                  <span className="visually-hidden">Μετακίνηση πάνω: {item.name}</span>
+                </button>
+                <button
+                  type="button"
+                  className="item__action"
+                  onClick={reorder.onMoveDown}
+                  disabled={pending || reorder.position === reorder.total - 1}
+                  title="Μετακίνηση κάτω"
+                >
+                  <span aria-hidden="true">↓</span>
+                  <span className="visually-hidden">Μετακίνηση κάτω: {item.name}</span>
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className="item__action"

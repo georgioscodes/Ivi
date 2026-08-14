@@ -12,7 +12,7 @@ import { RenameItemDialog } from './RenameItemDialog';
 import { SaveStatus } from './SaveStatus';
 import { usePlanSaveState } from './usePlanSaveState';
 import { dayLabel, formatGrams, formatKcal, mealLabel, statusLabel } from './planLabels';
-import { useAddItem, useRemoveItem, useUpdateItem } from './planMutations';
+import { useAddItem, useRemoveItem, useReorderItems, useUpdateItem } from './planMutations';
 import { usePlan } from './planQueries';
 import './plan.css';
 
@@ -32,6 +32,7 @@ export function PlanPage() {
   const addItem = useAddItem(planId);
   const updateItem = useUpdateItem(planId);
   const removeItem = useRemoveItem(planId);
+  const reorderItems = useReorderItems(planId);
 
   const [renaming, setRenaming] = useState<PlanItemResponse | null>(null);
   const [removing, setRemoving] = useState<PlanItemResponse | null>(null);
@@ -42,7 +43,7 @@ export function PlanPage() {
   // practitioner having to reconstruct what they were doing.
   const [lastEdit, setLastEdit] = useState<(() => void) | null>(null);
 
-  const save = usePlanSaveState([addItem, updateItem, removeItem]);
+  const save = usePlanSaveState([addItem, updateItem, removeItem, reorderItems]);
 
   // Which meal the food picker is filling. Held here rather than inside the dialog so the plan
   // view can mark that meal pending while the request is in flight.
@@ -138,6 +139,7 @@ export function PlanPage() {
           updateItem.reset();
           removeItem.reset();
           addItem.reset();
+          reorderItems.reset();
           void plan.refetch();
         }}
         onRetry={
@@ -155,6 +157,7 @@ export function PlanPage() {
         plan={data}
         onAddFood={(day, meal) => setTarget({ day, meal })}
         pendingMealId={addItem.isPending ? (target?.meal.id ?? null) : null}
+        onReorder={(mealId, orderedItemIds) => reorderItems.mutate({ mealId, orderedItemIds })}
         itemActions={{
           pendingItemId,
           onRename: setRenaming,

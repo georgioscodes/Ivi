@@ -595,3 +595,34 @@
   border-color: var(--error);
   background: #fbf3f2;
 }
+
+/* --- Reordering ------------------------------------------------------------------------------ */
+
+.item__grip {
+  cursor: grab;
+  color: var(--grey-400);
+  font-size: var(--text-sm);
+  line-height: 1;
+  padding-inline-end: var(--space-1);
+  /* Without this the browser scrolls the page instead of starting a drag on touch. */
+  touch-action: none;
+  align-self: center;
+}
+
+.item__grip:hover {
+  color: var(--ink-muted);
+}
+
+.item__grip:active {
+  cursor: grabbing;
+}
+
+/* Lifted out of the list while it moves, so the row being dragged is unmistakable. */
+.item--dragging {
+  position: relative;
+  z-index: 1;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  opacity: 0.95;
+}

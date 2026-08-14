@@ -91,6 +91,84 @@ export function useUpdateItem(planId: number) {
   });
 }
 
+/**
+ * Reorders the items in one meal.
+ *
+ * **This is the one plan mutation that updates optimistically**, and the reason is worth being
+ * precise about: a position is not a nutrient value. Reordering changes no total, no percentage
+ * and no average, so showing the new order before the server confirms it cannot put a number on
+ * screen the server would contradict — which is the whole basis of the no-optimistic-UI rule.
+ * Drag-and-drop that waits for a round trip before the row moves feels broken, so here the trade
+ * is worth making.
+ *
+ * The optimistic state is rolled back if the request fails. The server's answer still wins:
+ * whatever it returns replaces the cache, snapping the list to the truth if they differ.
+ *
+ * The endpoint wants the meal's *complete* item list and rejects anything else with a 400 —
+ * which is a real possibility if the plan on screen is stale, so that failure is surfaced rather
+ * than retried.
+ */
+export function useReorderItems(planId: number) {
+  const queryClient = useQueryClient();
+  const replacePlan = useReplacePlan(planId);
+  const withRetry = useConflictRetry(planId);
+
+  return useMutation({
+    mutationFn: ({ mealId, orderedItemIds }: { mealId: number; orderedItemIds: number[] }) =>
+      withRetry(() =>
+        request<PlanResponse>(`/plan/${planId}/meal/${mealId}/order`, {
+          method: 'PUT',
+          body: orderedItemIds,
+        }),
+      ),
+
+    onMutate: async ({ mealId, orderedItemIds }) => {
+      // Stop an in-flight read from landing on top of the optimistic order.
+      await queryClient.cancelQueries({ queryKey: planKeys.detail(planId) });
+      const previous = queryClient.getQueryData<PlanResponse>(planKeys.detail(planId));
+
+      if (previous) {
+        queryClient.setQueryData(planKeys.detail(planId), reorderLocally(previous, mealId, orderedItemIds));
+      }
+      return { previous };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(planKeys.detail(planId), context.previous);
+      }
+    },
+
+    onSuccess: replacePlan,
+  });
+}
+
+/** Applies the new order to a cached plan, leaving every figure exactly as the server sent it. */
+function reorderLocally(
+  plan: PlanResponse,
+  mealId: number,
+  orderedItemIds: number[],
+): PlanResponse {
+  return {
+    ...plan,
+    days: plan.days.map((day) => ({
+      ...day,
+      meals: day.meals.map((meal) => {
+        if (meal.id !== mealId) {
+          return meal;
+        }
+        const byId = new Map(meal.items.map((item) => [item.id, item]));
+        const reordered = orderedItemIds
+          .map((id) => byId.get(id))
+          .filter((item): item is (typeof meal.items)[number] => item !== undefined);
+        // Anything the id list did not mention keeps its place at the end rather than vanishing.
+        const missing = meal.items.filter((item) => !orderedItemIds.includes(item.id));
+        return { ...meal, items: [...reordered, ...missing] };
+      }),
+    })),
+  };
+}
+
 export function useRemoveItem(planId: number) {
   const replacePlan = useReplacePlan(planId);
   const withRetry = useConflictRetry(planId);

@@ -398,13 +398,37 @@ neither the original food name nor the override is exposed separately — so the
 cannot say "currently overridden from X", only offer to restore. Adding `nameOverride` to the DTO
 would let that be stated rather than implied.
 
-### 7e. Reordering
+### 7e. Reordering ✅
 
-- [ ] Drag and drop within a meal (`dnd-kit`, which is keyboard-accessible by default)
-- [ ] **Keyboard reordering** as a first-class path, not an afterthought
-- [ ] `PUT /plan/{planId}/meal/{mealId}/order` with the full ordered id list
-- [ ] Optimistic *ordering* is acceptable — it is not a number, and the server rejects a list that
-      does not match the meal exactly
+- [x] Drag and drop within a meal (`dnd-kit`), confined to the vertical axis and to the meal —
+      the API reorders *within* a meal and has no concept of moving an item to another one, so a
+      drag that looks like it will cross columns and then silently does not would be worse than
+      one that never suggests it
+- [x] **Keyboard reordering** as a first-class path — explicit move-up and move-down buttons,
+      always visible. dnd-kit's keyboard mode works (space to lift, arrows, space to drop) but
+      nothing on screen announces it; two buttons need no explaining and are what a switch user,
+      a screen-reader user, or anyone with three items in a narrow column will reach for
+- [x] `PUT /plan/{planId}/meal/{mealId}/order` with the full ordered id list
+- [x] Optimistic ordering, rolled back if the request fails
+
+Ordering is the **one** plan mutation that updates optimistically, and the reason is precise: a
+position is not a nutrient value. Reordering changes no total, no percentage and no average, so
+showing the new order before the server confirms it cannot put a number on screen that the server
+would contradict — which is the entire basis of the no-optimistic-UI rule. Drag-and-drop that
+waits for a round trip before the row moves feels broken, so here the trade is worth making.
+
+**A server defect this uncovered.** The reorder endpoint's response listed items in their *old*
+order while carrying the *new* `sortOrder` values; a subsequent read returned them correctly. So
+the practitioner dragged a row, the server stored the move, and the screen snapped back.
+
+`@OrderBy` on the collection applies when Hibernate **loads** it. Reordering mutates `sortOrder`
+on entities already in the persistence context, and the in-memory list keeps its original
+sequence. The client replaces its whole state from a mutation response precisely so screen and
+server cannot drift apart, which makes a response that contradicts the next read a failure at the
+foundation rather than a cosmetic one.
+
+Fixed in `PlanMapper.toDto(PlanMealEntity)` rather than in `reorderItems`, so every response is
+ordered the same way whichever operation produced it, with a Java test covering it.
 
 ### 7f. Concurrency and persistence ✅
 

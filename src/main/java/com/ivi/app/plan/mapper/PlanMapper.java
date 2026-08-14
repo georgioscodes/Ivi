@@ -13,6 +13,7 @@ import com.ivi.app.plan.model.PlanMealEntity;
 import com.ivi.app.shared.util.Nutrients;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 
 public final class PlanMapper {
@@ -75,13 +76,36 @@ public final class PlanMapper {
         );
     }
 
+    /**
+     * Items are sorted here rather than relied upon to arrive sorted.
+     *
+     * {@code @OrderBy} on the collection applies when Hibernate <em>loads</em> it. Reordering
+     * mutates {@code sortOrder} on entities already in the persistence context, and the in-memory
+     * list keeps its original sequence — so the response to a reorder carried the new sort values
+     * attached to items still listed in the old order, while a subsequent read returned them
+     * correctly. The two disagreed.
+     *
+     * <p>That matters more than it looks. The client treats a mutation response as the canonical
+     * plan and replaces its state with it, precisely so screen and server cannot drift apart. A
+     * response that contradicts the next read breaks that guarantee at its foundation: the
+     * practitioner dragged a row, the server stored the move, and the screen snapped back.
+     *
+     * <p>Sorting in the mapper rather than in {@code reorderItems} covers every response the same
+     * way, whichever operation produced it.
+     */
     public static PlanMealResponse toDto(PlanMealEntity meal) {
+        List<PlanItemResponse> items = meal.getItems().stream()
+            .sorted(Comparator.comparingInt(PlanItemEntity::getSortOrder)
+                .thenComparing(PlanItemEntity::getId))
+            .map(PlanMapper::toDto)
+            .toList();
+
         return new PlanMealResponse(
             meal.getId(),
             meal.getMealType().name(),
             meal.getTimeLabel(),
             meal.getSortOrder(),
-            meal.getItems().stream().map(PlanMapper::toDto).toList(),
+            items,
             new MacroTotals(
                 Nutrients.roundEnergy(meal.totalEnergyKcal()),
                 Nutrients.roundMacro(meal.totalProteinG()),

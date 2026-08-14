@@ -11,6 +11,8 @@ import com.ivi.app.journal.repository.JournalEntryRepository;
 import com.ivi.app.shared.dto.PagedResponse;
 import com.ivi.app.shared.exception.BusinessException;
 import com.ivi.app.shared.security.CurrentPractitioner;
+import com.ivi.app.shared.util.GreekText;
+import com.ivi.app.shared.util.LikeTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -61,12 +63,14 @@ public class JournalEntryService {
 
         auditService.recordClientRead("JOURNAL", null, clientId);
 
+        // The term is folded here and the stored text is folded in the query, so a word typed with
+        // its accent finds the same word written in capitals — which is how Greek headings are
+        // written, and so how half the entries read.
         Page<JournalEntryEntity> page = (term == null || term.isBlank())
-            ? journalRepository.findAllByPractitionerIdAndClientIdOrderByEntryDateDesc(
-                practitionerId, clientId, pageable)
-            : journalRepository
-                .findAllByPractitionerIdAndClientIdAndContentContainingIgnoreCaseOrderByEntryDateDesc(
-                    practitionerId, clientId, term.trim(), pageable);
+            ? journalRepository.findForClient(practitionerId, clientId, pageable)
+            : journalRepository.search(
+                practitionerId, clientId,
+                LikeTerm.escape(GreekText.fold(term.trim())), pageable);
 
         return PagedResponse.from(page.map(JournalEntryMapper::toDto));
     }

@@ -272,6 +272,7 @@ export function MeasurementsTab() {
               totalElements={history.data.totalElements}
               onChange={setPage}
               busy={history.isFetching}
+              noun="μετρήσεις"
             />
           </>
         ) : null}

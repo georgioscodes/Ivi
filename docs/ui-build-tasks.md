@@ -251,14 +251,43 @@ the multiplier read as one thousand three hundred and seventy-five to anyone say
 the product, and the maintenance line below it showed the same product again, which reads as a
 repetition rather than a step. The activity row now shows the multiplier.
 
-## Block 6 — Food catalogue
+## Block 6 — Food catalogue ✅
 
-- [ ] Browse and search, filtered by category
-- [ ] Custom food form
-- [ ] **Override editor** — editing a catalogue food creates a private override; the UI must show
-      that a food is overridden and offer revert
-- [ ] Suggestion form and the practitioner's own suggestions list
-- [ ] Portion editor
+- [x] Browse and search, filtered by category — term, category and page all in the URL
+- [x] Custom food form
+- [x] **Override editor** — editing a catalogue food creates a private override. The edit screen
+      says so *before* the practitioner types, the submit button says "save my version", and both
+      the list and the detail page badge the result with revert offered next to it
+- [x] Suggestion form and the practitioner's own suggestions list
+- [x] Portion editor, with the default enforced as a radio group — two defaults would leave the
+      plan builder picking arbitrarily between them
+
+Categories are **not** colour-coded. The roadmap wants colour here eventually and the palette
+cannot supply it: five reliably distinguishable hues need a scale designed for it plus a
+non-colour channel carrying the same information. Text does that job today at no cost.
+
+Adds top-level navigation to the shell — clients and foods — which had none before.
+
+Three defects found while verifying.
+
+**A practitioner could not report a wrong default once they had corrected it.**
+`POST /food/{id}/suggestion` resolves its id against the shared catalogue only, and after an
+override `food.id` is the override's own id, so the suggestion was rejected outright. The person
+most likely to notice a bad catalogue value — the one who already fixed it for themselves — was
+the one who could not tell anyone. Now posts `overridesFoodId`.
+
+**Pagination said "34 πελάτες" under a table of cheeses.** The component was written for the
+client list with the noun hardcoded. It is now a required prop rather than a default, so the next
+screen to reuse it cannot repeat this.
+
+**The override detail page contradicted itself** — badged "Τροποποιημένο" while the source line
+read "Καταχωρήθηκε από εσάς", because an override's `source` is `PRACTITIONER`. They did not enter
+it; they changed a catalogue entry.
+
+One rough edge accepted: `FoodSuggestionResponse` carries only `foodId`, and the entity holds a
+soft reference with no relation, so the server cannot cheaply resolve a name either. The
+suggestions list resolves names client-side, deduplicated and cached under the same key the detail
+page uses, falling back to the id. Adding the name to the response would be the cleaner fix.
 
 ---
 

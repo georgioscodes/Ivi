@@ -114,6 +114,7 @@ export function ClientListPage() {
             totalElements={query.data.totalElements}
             onChange={goToPage}
             busy={query.isFetching}
+            noun="πελάτες"
           />
         </>
       ) : null}

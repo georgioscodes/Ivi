@@ -10,6 +10,10 @@ import {
 } from '@/features/client/ClientDetailPage';
 import { ClientFormPage } from '@/features/client/ClientFormPage';
 import { ClientListPage } from '@/features/client/ClientListPage';
+import { FoodCataloguePage } from '@/features/food/FoodCataloguePage';
+import { FoodDetailPage } from '@/features/food/FoodDetailPage';
+import { FoodFormPage } from '@/features/food/FoodFormPage';
+import { SuggestionsPage } from '@/features/food/SuggestionsPage';
 import { MeasurementsTab } from '@/features/measurement/MeasurementsTab';
 import { TargetsTab } from '@/features/nutrition/TargetsTab';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -46,6 +50,13 @@ export function App() {
           }
         >
           <Route path="/" element={<ClientListPage />} />
+          <Route path="/food" element={<FoodCataloguePage />} />
+          <Route path="/food/new" element={<FoodFormPage mode="create" />} />
+          {/* Before /food/:foodId, or "suggestions" would be read as a food id. */}
+          <Route path="/food/suggestions" element={<SuggestionsPage />} />
+          <Route path="/food/:foodId" element={<FoodDetailPage />} />
+          <Route path="/food/:foodId/edit" element={<FoodFormPage mode="edit" />} />
+
           <Route path="/client/new" element={<ClientFormPage mode="create" />} />
           <Route path="/client/:clientId/edit" element={<ClientFormPage mode="edit" />} />
 

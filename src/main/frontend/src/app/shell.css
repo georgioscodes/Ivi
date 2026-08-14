@@ -58,3 +58,29 @@
     display: none;
   }
 }
+
+.shell__nav {
+  display: flex;
+  gap: var(--space-1);
+  margin-inline-start: var(--space-5);
+  margin-inline-end: auto;
+}
+
+.shell__link {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  /* Reserved on every link so the row does not shift when one becomes active. */
+  border-bottom: 2px solid transparent;
+}
+
+.shell__link:hover {
+  color: var(--ink);
+}
+
+.shell__link--active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--brand-taupe);
+}

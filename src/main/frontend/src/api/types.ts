@@ -166,6 +166,89 @@ export interface MeasurementSeriesResponse {
   totalChange: number | null;
 }
 
+// --- Food catalogue ----------------------------------------------------------------------------
+
+export type FoodCategory = 'FRESH' | 'CARBOHYDRATE' | 'PROTEIN' | 'FAT' | 'COMPOSITE';
+
+export interface FoodPortionResponse {
+  id: number;
+  label: string;
+  grams: number;
+  isDefault: boolean;
+}
+
+export interface FoodPortionRequest {
+  label: string;
+  grams: number;
+  isDefault: boolean;
+}
+
+/**
+ * A food as this practitioner sees it. Composition is always per 100 g.
+ *
+ * The last three fields are the override machinery, and they are not interchangeable:
+ *
+ * - `global` — a shared catalogue food, which no practitioner can edit or delete.
+ * - `overridden` — this row *is* a practitioner's private replacement for a catalogue food.
+ *   Browsing returns the replacement, never both.
+ * - `overridesFoodId` — the catalogue food being replaced.
+ *
+ * `id` is always this row's own id, so an override's id is the override's, not the catalogue
+ * food's. Both work for reverting; only this one works for editing.
+ */
+export interface FoodResponse {
+  id: number;
+  nameEl: string;
+  nameEn: string | null;
+  category: FoodCategory | (string & {});
+  energyKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+  source: string;
+  portions: FoodPortionResponse[];
+  global: boolean;
+  overridden: boolean;
+  overridesFoodId: number | null;
+}
+
+export interface FoodCreateRequest {
+  nameEl: string;
+  nameEn?: string;
+  category: string;
+  energyKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+  portions?: FoodPortionRequest[];
+}
+
+export type FoodUpdateRequest = FoodCreateRequest;
+
+/** Every field optional: a suggestion may propose one correction and leave the rest alone. */
+export interface FoodSuggestionRequest {
+  proposedNameEl?: string;
+  proposedEnergyKcal?: number;
+  proposedProteinG?: number;
+  proposedCarbohydrateG?: number;
+  proposedFatG?: number;
+  rationale?: string;
+}
+
+export interface FoodSuggestionResponse {
+  id: number;
+  foodId: number;
+  proposedNameEl: string | null;
+  proposedEnergyKcal: number | null;
+  proposedProteinG: number | null;
+  proposedCarbohydrateG: number | null;
+  proposedFatG: number | null;
+  rationale: string | null;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | (string & {});
+  createdAt: IsoInstant;
+  reviewedAt: IsoInstant | null;
+}
+
 // --- Nutrition targets -------------------------------------------------------------------------
 
 export type BmrEquation =

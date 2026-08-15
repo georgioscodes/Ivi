@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Locale;
 
 /**
  * Loads credentials for authentication.
@@ -26,7 +27,7 @@ public class PractitionerUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        PractitionerEntity practitioner = practitionerRepository.findByEmail(email.trim().toLowerCase())
+        PractitionerEntity practitioner = practitionerRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT))
             // Generic message: distinguishing "no such account" from "wrong password" hands an
             // attacker a way to enumerate valid addresses.
             .orElseThrow(() -> new UsernameNotFoundException("Bad credentials"));

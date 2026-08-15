@@ -1,6 +1,8 @@
 package com.ivi.app.plan.dto;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -34,8 +36,18 @@ public record PlanCreateRequest(
     @DecimalMin(value = "0.0", message = "Fat target cannot be negative")
     BigDecimal targetFatG,
 
+    /** VARCHAR(40) in V6__plan.sql. Unbounded here meant a long value became a 500. */
+    @Size(max = 40, message = "Basis must be at most 40 characters")
     String basis,
 
+    /*
+     * NUMERIC(4,3) — one digit before the point, three after. The multipliers this holds are the
+     * standard activity factors, which live between 1.2 and 1.9; anything outside that is a typo
+     * rather than a plan, and without the bound it reached the database and came back a 500.
+     */
+    @DecimalMin(value = "1.0", message = "Activity factor must be at least 1.0")
+    @DecimalMax(value = "9.999", message = "Activity factor must be at most 9.999")
+    @Digits(integer = 1, fraction = 3, message = "Activity factor allows three decimal places")
     BigDecimal activityFactor,
 
     /**

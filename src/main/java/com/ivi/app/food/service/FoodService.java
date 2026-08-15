@@ -15,6 +15,8 @@ import com.ivi.app.food.repository.FoodSuggestionRepository;
 import com.ivi.app.shared.dto.PagedResponse;
 import com.ivi.app.shared.exception.BusinessException;
 import com.ivi.app.shared.security.CurrentPractitioner;
+import com.ivi.app.shared.util.GreekText;
+import com.ivi.app.shared.util.LikeTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +41,10 @@ public class FoodService {
 
         Page<FoodEntity> page;
         if (term != null && !term.isBlank()) {
-            page = foodRepository.searchVisible(practitionerId, term.trim(), pageable);
+            // Folded and escaped for the same reasons the journal does it: Greek written in
+            // capitals carries no accents, and an unescaped % in a search box means "everything".
+            page = foodRepository.searchVisible(
+                practitionerId, LikeTerm.escape(GreekText.fold(term.trim())), pageable);
         } else if (category != null && !category.isBlank()) {
             page = foodRepository.findVisibleByCategory(practitionerId, parseCategory(category), pageable);
         } else {
@@ -247,7 +253,7 @@ public class FoodService {
 
     private FoodCategory parseCategory(String category) {
         try {
-            return FoodCategory.valueOf(category.trim().toUpperCase());
+            return FoodCategory.valueOf(category.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             throw new BusinessException("Unknown food category: " + category);
         }

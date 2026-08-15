@@ -10,6 +10,7 @@ import java.util.HexFormat;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Locale;
 
 /**
  * Masks personal data in request and response bodies before they reach a log.
@@ -109,7 +110,7 @@ public class SensitiveDataMasker {
     }
 
     private String maskValue(String key, String value) {
-        String normalised = key.toLowerCase();
+        String normalised = key.toLowerCase(Locale.ROOT);
 
         if (CREDENTIAL_KEYS.contains(normalised)) {
             return "[REDACTED]";
@@ -145,7 +146,7 @@ public class SensitiveDataMasker {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             digest.update(salt);
-            byte[] hash = digest.digest(value.trim().toLowerCase().getBytes(StandardCharsets.UTF_8));
+            byte[] hash = digest.digest(value.trim().toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash, 0, 2);
         } catch (NoSuchAlgorithmException ex) {
             // SHA-256 is required of every JVM, so this cannot happen — but failing closed

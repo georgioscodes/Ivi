@@ -6,6 +6,7 @@ import com.ivi.app.practitioner.service.PractitionerService;
 import com.ivi.app.shared.exception.ResourceNotFoundException;
 import com.ivi.app.shared.exception.TooManyAttemptsException;
 import com.ivi.app.shared.security.AuthenticatedPractitioner;
+import com.ivi.app.shared.security.ClientAddress;
 import com.ivi.app.shared.security.LoginRateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,22 +33,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final PractitionerService practitionerService;
     private final LoginRateLimiter rateLimiter;
+    private final ClientAddress clientAddress;
 
     private final SecurityContextRepository securityContextRepository =
         new HttpSessionSecurityContextRepository();
-
-    private String callerIpOf(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return forwarded == null || forwarded.isBlank()
-            ? request.getRemoteAddr()
-            : forwarded.split(",")[0].trim();
-    }
 
     @PostMapping("/login")
     public ResponseEntity<PractitionerResponse> login(@Valid @RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest,
                                                       HttpServletResponse httpResponse) {
-        String callerIp = callerIpOf(httpRequest);
+        String callerIp = clientAddress.of(httpRequest);
 
         if (rateLimiter.isBlocked(request.email(), callerIp)) {
             throw new TooManyAttemptsException(

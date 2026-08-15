@@ -56,6 +56,16 @@ server:
     enabled: true
 
 ivi:
+  security:
+    # How many X-Forwarded-For entries were appended by proxies we control, counting from the
+    # right. Zero means the header is not believed at all and the socket address is used.
+    #
+    # A deployment behind a load balancer MUST set this — behind one, it is 1. Left at zero there,
+    # every request looks like it came from the balancer and the per-address login limit stops
+    # telling callers apart. It degrades safely rather than dangerously: the per-email limit is
+    # what actually protects an account, and that one cannot be spoofed at all.
+    trusted-proxy-count: ${TRUSTED_PROXY_COUNT:0}
+
   http-logging:
     enabled: true
     # Bodies carry names, weights, blood markers and clinical notes — Article 9 data — and on the

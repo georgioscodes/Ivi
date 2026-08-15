@@ -1,6 +1,7 @@
 package com.ivi.app.food.repository;
 
 import com.ivi.app.food.model.FoodCategory;
+import com.ivi.app.shared.util.GreekText;
 import com.ivi.app.food.model.FoodEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,11 +47,39 @@ public interface FoodRepository extends Repository<FoodEntity, Long> {
                                            @Param("category") FoodCategory category,
                                            Pageable pageable);
 
-    @Query("""
-        SELECT f FROM FoodEntity f
-        WHERE (LOWER(f.nameEl) LIKE LOWER(CONCAT('%', :term, '%'))
-               OR LOWER(COALESCE(f.nameEn, '')) LIKE LOWER(CONCAT('%', :term, '%')))
-          AND """ + VISIBLE)
+    /**
+     * The same Greek folding the journal search uses, expressed in JPQL.
+     *
+     * <p>{@code FUNCTION} calls the database's {@code translate} from JPQL rather than dropping to
+     * a native query, which matters here: {@link #VISIBLE} encodes the override-subtraction rule
+     * that makes a practitioner's own food replace the global one, and rewriting that in a second
+     * dialect to gain a folded search would be two definitions of the subtlest rule in the module.
+     *
+     * <p>Without the folding, a practitioner typing "ψωμι" — no accent, as people type quickly —
+     * found nothing, because the catalogue stores "Ψωμί ολικής άλεσης". Capitals carry no accents
+     * in Greek, so lowercasing alone never reconciles the two.
+     */
+    String FOLD_ARGS = "'" + GreekText.ACCENTED + "', '" + GreekText.FOLDED + "'";
+
+    /*
+     * The CAST is required, not cosmetic. `FUNCTION` is Hibernate's escape hatch for calling a
+     * database function it does not model, so it types the result as Object — and `LIKE` then
+     * refuses it: "Operand of 'like' is of type 'java.lang.Object'". The application fails to
+     * start, which is the right way for this to go wrong.
+     */
+    String FOLDED_NAME_EL =
+        "CAST(FUNCTION('translate', LOWER(f.nameEl), " + FOLD_ARGS + ") AS String)";
+    String FOLDED_NAME_EN =
+        "CAST(FUNCTION('translate', LOWER(COALESCE(f.nameEn, '')), " + FOLD_ARGS + ") AS String)";
+
+    /**
+     * The term arrives folded <em>and</em> LIKE-escaped from the service, so {@code %} typed into
+     * the search box is a percent sign rather than "every food in the catalogue".
+     */
+    @Query("SELECT f FROM FoodEntity f WHERE ("
+        + FOLDED_NAME_EL + " LIKE CONCAT('%', :term, '%') ESCAPE '\\'"
+        + " OR " + FOLDED_NAME_EN + " LIKE CONCAT('%', :term, '%') ESCAPE '\\')"
+        + " AND " + VISIBLE)
     Page<FoodEntity> searchVisible(@Param("practitionerId") Long practitionerId,
                                    @Param("term") String term,
                                    Pageable pageable);

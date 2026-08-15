@@ -16,6 +16,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Logs every request and response at the boundary.
@@ -151,7 +152,7 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
         if (contentType == null) {
             return false;
         }
-        String lower = contentType.toLowerCase();
+        String lower = contentType.toLowerCase(Locale.ROOT);
         return TEXTUAL_CONTENT_TYPES.stream().anyMatch(lower::startsWith);
     }
 }

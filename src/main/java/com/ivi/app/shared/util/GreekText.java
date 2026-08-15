@@ -21,12 +21,17 @@ import java.util.Locale;
 public final class GreekText {
 
     /**
-     * The accented lowercase vowels, plus final sigma. Position for position with {@code FOLDED},
-     * and identical to the {@code translate()} arguments in {@code JournalEntryRepository} — the
-     * two have to fold the same way or a term folded here would not match text folded there.
+     * The accented lowercase vowels, plus final sigma, position for position with {@link #FOLDED}.
+     *
+     * <p>Public and {@code final} so the repositories can concatenate them straight into their
+     * {@code translate()} calls — a compile-time constant is usable inside an annotation, which
+     * makes this the single definition of the folding for both the Java side (the search term)
+     * and the SQL side (the stored text). They were duplicated as literals in two places at first,
+     * and the two have to agree exactly or nothing matches: fold the term one way and the column
+     * another, and every search silently returns nothing.
      */
-    private static final String ACCENTED = "άέήίόύώϊϋΐΰς";
-    private static final String FOLDED = "αεηιουωιυιυσ";
+    public static final String ACCENTED = "άέήίόύώϊϋΐΰς";
+    public static final String FOLDED = "αεηιουωιυιυσ";
 
     private GreekText() {
         // Utility class — no instantiation

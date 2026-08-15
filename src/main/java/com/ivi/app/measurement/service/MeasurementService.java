@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +61,8 @@ public class MeasurementService {
         LocalDate recordedOn = request.recordedOn() == null ? LocalDate.now() : request.recordedOn();
 
         MeasurementEntity measurement = measurementRepository
-            .findByClientIdAndTypeCodeAndRecordedOn(request.clientId(), type.getCode(), recordedOn)
+            .findByPractitionerIdAndClientIdAndTypeCodeAndRecordedOn(
+                practitionerId, request.clientId(), type.getCode(), recordedOn)
             .map(existing -> {
                 existing.correctTo(request.value(), request.notes());
                 return existing;
@@ -212,7 +214,7 @@ public class MeasurementService {
 
     private MeasurementTypeEntity requireType(String code) {
         return Optional.ofNullable(code)
-            .flatMap(value -> typeRepository.findByCode(value.trim().toUpperCase()))
+            .flatMap(value -> typeRepository.findByCode(value.trim().toUpperCase(Locale.ROOT)))
             .orElseThrow(() -> new BusinessException("Unknown measurement type: " + code));
     }
 }

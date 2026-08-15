@@ -1,6 +1,7 @@
 package com.ivi.app.shared.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
@@ -111,6 +112,30 @@ public class GlobalExceptionHandler {
             "Method not supported for this resource"
         );
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
+    }
+
+    /**
+     * A constraint the database enforced and the application did not.
+     *
+     * <p>Two things land here. A genuine race — two registrations for the same email arriving
+     * together, where the {@code existsByEmail} check passes for both and the unique index catches
+     * the loser — which is a conflict and reads as one. And a value too long for its column, which
+     * is a validation gap: a 500 for text a caller typed is the application blaming itself for the
+     * caller's input, and it hides the actual constraint behind "an unexpected error occurred".
+     *
+     * <p>Logged at warn with the cause, because it is the marker of a missing {@code @Size}
+     * somewhere and should be findable rather than silent.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Database rejected a write; the application should have caught this first", ex);
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            "That could not be saved: it conflicts with something already stored, "
+                + "or a value is longer than the field allows."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(Exception.class)

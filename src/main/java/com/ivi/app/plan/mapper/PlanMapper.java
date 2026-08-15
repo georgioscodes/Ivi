@@ -97,7 +97,9 @@ public final class PlanMapper {
     public static PlanMealResponse toDto(PlanMealEntity meal) {
         List<PlanItemResponse> items = meal.getItems().stream()
             .sorted(Comparator.comparingInt(PlanItemEntity::getSortOrder)
-                .thenComparing(PlanItemEntity::getId))
+                // nullsLast because an item that has not been flushed yet has no id, and the
+                // tie-break would then throw while rendering a perfectly valid plan.
+                .thenComparing(PlanItemEntity::getId, Comparator.nullsLast(Comparator.naturalOrder())))
             .map(PlanMapper::toDto)
             .toList();
 

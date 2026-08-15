@@ -84,6 +84,36 @@ class AppShellMatcherTest {
         assertThat(SecurityConfig.APP_SHELL.matches(request)).isFalse();
     }
 
+    /**
+     * The bypass this matcher actually had, and the neighbourhood around it.
+     *
+     * <p>{@code %61} is {@code a}. The matcher read the raw request URI while Spring MVC routes on
+     * the decoded one, so {@code /%61pi/v1/measurement/type} did not look like {@code /api/} here
+     * and was permitted — then the dispatcher decoded it and served the endpoint. Confirmed
+     * against the running application before this test existed: 401 for the plain path, 200 with
+     * a JSON body for the encoded one.
+     *
+     * <p>Encoded separately from the other cases because a raw-string matcher passes every
+     * ordinary test while failing every one of these.
+     */
+    @ParameterizedTest(name = "GET {0} is not public")
+    @ValueSource(strings = {
+        "/%61pi/v1/measurement/type",
+        "/%61pi/v1/client",
+        "/ap%69/v1/client",
+        "/%2561pi/v1/client",
+        "/%61ctuator/health",
+        "/static/../api/v1/client",
+        "/./api/v1/client",
+    })
+    void shouldNotBeFooledByAnEncodedOrUnnormalisedPath(String path) {
+        // Given — anything that reaches an /api handler must be authenticated, however it was
+        // spelled on the way in
+
+        // When / Then
+        assertThat(matches("GET", path)).isFalse();
+    }
+
     private boolean matches(String method, String path) {
         return SecurityConfig.APP_SHELL.matches(new MockHttpServletRequest(method.trim(), path));
     }

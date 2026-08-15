@@ -27,8 +27,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The plan builder.
@@ -128,7 +132,7 @@ public class PlanService {
                 food.proteinG(),
                 food.carbohydrateG(),
                 food.fatG(),
-                meal.getItems().size()
+                nextSortOrder(meal)
             ));
 
             plan.touch();
@@ -170,7 +174,19 @@ public class PlanService {
             PlanMealEntity meal = plan.findMeal(mealId)
                 .orElseThrow(() -> new BusinessException("That meal is not part of this plan"));
 
-            if (orderedItemIds.size() != meal.getItems().size()) {
+            /*
+             * Set equality, not just size. A list of the right length can still name the same item
+             * twice — [a, a] for a two-item meal passed the old check, and the loop then wrote two
+             * positions onto one item and left the other where it was, producing a silently partial
+             * reorder. The client always sends the full list, so this only fires on a malformed
+             * request; it costs one comparison to stop storing an order nobody asked for.
+             */
+            Set<Long> requested = new HashSet<>(orderedItemIds);
+            Set<Long> present = meal.getItems().stream()
+                .map(PlanItemEntity::getId)
+                .collect(Collectors.toSet());
+
+            if (requested.size() != orderedItemIds.size() || !requested.equals(present)) {
                 throw new BusinessException("The new order must list every item in the meal exactly once");
             }
 
@@ -218,7 +234,7 @@ public class PlanService {
     public Optional<PlanResponse> updateStatus(Long planId, String status) {
         return load(planId).map(plan -> {
             try {
-                plan.setStatus(PlanStatus.valueOf(status.trim().toUpperCase()));
+                plan.setStatus(PlanStatus.valueOf(status.trim().toUpperCase(Locale.ROOT)));
             } catch (IllegalArgumentException ex) {
                 throw new BusinessException("Unknown plan status: " + status);
             }
@@ -239,6 +255,23 @@ public class PlanService {
 
     private Optional<PlanEntity> load(Long planId) {
         return planRepository.findByIdAndPractitionerId(planId, CurrentPractitioner.requireId());
+    }
+
+    /**
+     * One past the highest position currently in use.
+     *
+     * <p>{@code items.size()} looks equivalent and is not: removing an item from the middle leaves
+     * positions 0 and 2 behind with a size of 2, so the next food is stored at 2 as well. The
+     * duplicate is currently invisible because {@code PlanMapper} breaks ties on id and a new item
+     * always has the highest one — verified against the running application, the new food does
+     * land last. That makes this a latent fault rather than a visible one, which is precisely the
+     * kind that surfaces later as an unexplainable ordering bug when the tie-break changes.
+     */
+    private static int nextSortOrder(PlanMealEntity meal) {
+        return meal.getItems().stream()
+            .mapToInt(PlanItemEntity::getSortOrder)
+            .max()
+            .orElse(-1) + 1;
     }
 
     private PlanDayEntity scaffoldDay(int dayIndex) {

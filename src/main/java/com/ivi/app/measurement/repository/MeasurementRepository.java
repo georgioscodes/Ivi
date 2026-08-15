@@ -23,9 +23,17 @@ public interface MeasurementRepository extends TenantScopedRepository<Measuremen
     List<MeasurementEntity> findAllByPractitionerIdAndClientIdAndTypeCodeOrderByRecordedOnAsc(
         Long practitionerId, Long clientId, String typeCode);
 
-    /** Used to decide whether recording a value is a new reading or a correction. */
-    Optional<MeasurementEntity> findByClientIdAndTypeCodeAndRecordedOn(
-        Long clientId, String typeCode, LocalDate recordedOn);
+    /**
+     * Used to decide whether recording a value is a new reading or a correction.
+     *
+     * <p>Scoped by practitioner like every other finder here. It was not, and the caller happened
+     * to be safe — {@code record()} validates the client through the client service first, and a
+     * client belongs to exactly one practitioner — but "safe because of what the caller does" is
+     * not the guarantee this codebase is built on. The ArchUnit rule that enforces the convention
+     * only inspects repositories extending {@code JpaRepository}, so it could not see this one.
+     */
+    Optional<MeasurementEntity> findByPractitionerIdAndClientIdAndTypeCodeAndRecordedOn(
+        Long practitionerId, Long clientId, String typeCode, LocalDate recordedOn);
 
     List<MeasurementEntity> findAllByPractitionerIdAndClientId(Long practitionerId, Long clientId);
 }

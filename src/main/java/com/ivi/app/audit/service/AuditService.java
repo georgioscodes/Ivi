@@ -6,6 +6,7 @@ import com.ivi.app.audit.model.AuditAction;
 import com.ivi.app.audit.model.AuditLogEntity;
 import com.ivi.app.audit.repository.AuditLogRepository;
 import com.ivi.app.shared.dto.PagedResponse;
+import com.ivi.app.shared.security.ClientAddress;
 import com.ivi.app.shared.security.CurrentPractitioner;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AuditService {
 
     private final AuditLogRepository auditRepository;
+    private final ClientAddress clientAddress;
 
     /**
      * Records an access.
@@ -77,13 +79,9 @@ public class AuditService {
     private String callerIp() {
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
             HttpServletRequest request = attributes.getRequest();
-            // Behind the load balancer the socket address is the proxy, so the forwarded header
-            // is the useful value. Only the first entry is the client; the rest are hops.
-            String forwarded = request.getHeader("X-Forwarded-For");
-            if (forwarded != null && !forwarded.isBlank()) {
-                return forwarded.split(",")[0].trim();
-            }
-            return request.getRemoteAddr();
+            // Resolved by ClientAddress, which knows how many forwarded hops may be believed.
+            // Reading the header directly here recorded whatever the caller claimed.
+            return clientAddress.of(request);
         }
         return null;
     }

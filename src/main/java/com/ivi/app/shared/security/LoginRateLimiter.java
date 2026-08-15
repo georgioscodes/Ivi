@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 
 /**
  * Slows down credential guessing at the login endpoint.
@@ -79,7 +80,7 @@ public class LoginRateLimiter {
     }
 
     private String normalise(String email) {
-        return email == null ? null : email.trim().toLowerCase();
+        return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }
 
     private static final class Window {

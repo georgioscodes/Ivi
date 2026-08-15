@@ -22,6 +22,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.util.UrlPathHelper;
 
 import java.nio.charset.StandardCharsets;
 
@@ -31,6 +32,9 @@ import java.nio.charset.StandardCharsets;
 public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
+
+    /** Decodes and normalises, exactly as the dispatcher does. See {@link #pathOf}. */
+    private static final UrlPathHelper PATH_HELPER = UrlPathHelper.defaultInstance;
 
     /**
      * Any GET that is not an API or actuator call: the HTML shell, the fingerprinted bundles, the
@@ -48,8 +52,28 @@ public class SecurityConfig {
      */
     public static final RequestMatcher APP_SHELL = request ->
         isRead(request.getMethod())
+            && isPlain(pathOf(request))
             && !pathOf(request).startsWith("/api/")
             && !pathOf(request).startsWith("/actuator/");
+
+    /**
+     * Anything unusual in the path is refused public treatment.
+     *
+     * <p>A percent sign that survived decoding means the request was encoded twice; dot segments
+     * mean it was not normalised. Tomcat normalises before the filter chain runs and decodes only
+     * once, so neither should reach here — but "the container will have dealt with it" is exactly
+     * the assumption that produced the bypass this method exists to close, and the cost of being
+     * wrong is asymmetric. An odd path falling through to authentication is a login prompt; an odd
+     * path treated as public is a hole.
+     *
+     * <p>No legitimate URL in this application contains either. Asset names are hashes.
+     */
+    private static boolean isPlain(String path) {
+        return path.indexOf('%') < 0
+            && !path.contains("..")
+            && !path.contains("./")
+            && !path.contains("//");
+    }
 
     /**
      * HEAD as well as GET. Omitting it made every uptime check, proxy revalidation and link
@@ -60,10 +84,27 @@ public class SecurityConfig {
         return HttpMethod.GET.matches(method) || HttpMethod.HEAD.matches(method);
     }
 
+    /**
+     * The path <em>as the dispatcher will see it</em>, decoded and normalised.
+     *
+     * <p>This used to read {@code getRequestURI()} straight, which is the raw, percent-encoded
+     * form. Spring MVC routes on the decoded path, so the two disagreed and the disagreement was
+     * an authentication bypass: {@code GET /%61pi/v1/measurement/type} did not start with
+     * {@code /api/} as far as this matcher was concerned, so it was permitted — and then the
+     * dispatcher decoded it and served the endpoint. Reproduced against the running application,
+     * 401 for the plain path and 200 with a body for the encoded one.
+     *
+     * <p>Tenant data never escaped, because every tenant-scoped read goes through
+     * {@link CurrentPractitioner#requireId()} and that throws rather than defaulting — the
+     * bypassed requests turned into 500s. Reference data did escape, and any endpoint became an
+     * unauthenticated way to raise a server error.
+     *
+     * <p>{@link UrlPathHelper} is the same helper the dispatcher itself uses, which is the point:
+     * a matcher that decides "is this public?" has to answer the question about the path that
+     * will actually be routed, not about the bytes on the wire.
+     */
     private static String pathOf(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        return contextPath.isEmpty() ? uri : uri.substring(contextPath.length());
+        return PATH_HELPER.getPathWithinApplication(request);
     }
 
     @Bean
@@ -118,7 +159,17 @@ public class SecurityConfig {
 
             .logout(logout -> logout
                 .logoutUrl("/api/v1/auth/logout")
-                .deleteCookies("JSESSIONID")
+                /*
+                  SESSION, not JSESSIONID: Spring Session JDBC issues its own cookie and the
+                  container's is never set. Verified against the running application — the
+                  Set-Cookie on login reads `SESSION=...`.
+
+                  Cosmetic rather than a revocation failure, and worth being precise about:
+                  invalidateHttpSession already destroys the server-side record, and replaying a
+                  pre-logout cookie was measured returning 401. This stops a dead cookie sitting
+                  in the browser looking like a live session.
+                */
+                .deleteCookies("SESSION")
                 .invalidateHttpSession(true)
                 .logoutSuccessHandler((request, response, authentication) ->
                     response.setStatus(HttpStatus.NO_CONTENT.value()))

@@ -644,6 +644,57 @@ Not UI work, and not finished:
 - **MFA.** Optional MFA reaches roughly a tenth of users; for Article 9 health data it should be
   required. Nothing currently stops a stolen password.
 - **Erasure and export per client.** A subject access or deletion request has no answer in the
-  software today, and the practitioner is the controller who must give one.
+  software today, and the practitioner is the controller who must give one. Designed but
+  deliberately deferred — see below.
 
 Both should land before the first real practitioner, not after.
+
+### Subject access and erasure — the design, parked
+
+Discussed and deferred rather than dropped. Picking it up should start here, not from scratch.
+
+**Where it already stands.** Erasure mechanically half-works: `DELETE /client/{id}` is a hard
+delete and `ON DELETE CASCADE` carries plans, measurements and journal entries with it. It is
+audited, and the trail survives on purpose — `audit_log.client_id` is not a foreign key precisely
+so that erasing a client does not erase the evidence of who read them. Export does not exist at
+all; the only one in the system is the per-plan PDF. There is no admin or role concept anywhere:
+`AuthenticatedPractitioner.getAuthorities()` returns an empty list.
+
+**Split the two rights, because they are not alike.** Access and portability are non-destructive
+and read-only — the practitioner can already read every one of those records on screen, so an
+approval gate adds no safety and only delays a legal obligation. Erasure is irreversible across
+four tables, and that is where a gate earns its place.
+
+**Export.** `GET /client/{id}/export`, ungated, producing JSON — Article 20 asks for a
+machine-readable format — alongside the human-readable PDF. Recorded as `EXPORT`, an action the
+audit log already has. This is the half that is both unambiguous and entirely missing, so it is
+where to start.
+
+**Erasure.** One tenant-owned table, `data_subject_request`, carrying type, status
+(`REQUESTED → APPROVED → COMPLETED`, or `REFUSED`/`CANCELLED`), `approved_by`, an `executes_at`
+cooling-off window, and an outcome with a reason. `received_at` is stored separately from
+`created_at`: the statutory clock runs from when the *client* asked, not from when somebody found
+time to record it — the same distinction the journal draws between the consultation and the
+write-up, for the same reason.
+
+**Three outcomes, not one.** `ERASED`, `REFUSED` with a recorded reason, and `RESTRICTED` — kept
+because a retention obligation requires it, but locked out of normal use. Restriction is by far
+the most expensive of the three: a restricted client has to disappear from every list, search and
+picker and become read-only, which touches every tenant-scoped query in the system. It should not
+be built until a retention period is confirmed to actually oblige keeping records the practitioner
+has been asked to erase. That is a question for a DPO, not for this document.
+
+**The open question, which is why this is parked.** Who approves. The requirement as stated is
+that a user requests and an admin allows. If "admin" means someone at Ivi, the shape is inverted:
+the dietitian is the **controller** and Ivi is the **processor**, and a processor is required to
+*assist* with subject rights rather than to permit them. It would put Ivi inside the dietitian's
+one-month statutory deadline, so that an outage here becomes their exposure, and it would give Ivi
+staff cross-tenant sight of Article 9 data — dismantling the tenant isolation the rest of the
+system is built around.
+
+The concern underneath the requirement is real: a mis-click or a stolen session should not be able
+to destroy a clinical record. That is answerable **inside the tenant** — a deliberate two-step act
+with a cooling-off window now, and the practice owner as approver once multi-seat practices exist.
+The `approved_by` column and the empty `getAuthorities()` are both already shaped for it. If an
+Ivi-side approver is wanted anyway, that is a legitimate call to make, but it should be made
+explicitly and written down, not arrived at as a side effect of a data model.

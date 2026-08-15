@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { messageFor } from '@/api/messages';
 import type { PlanDayResponse, PlanItemResponse, PlanMealResponse } from '@/api/types';
+import { usePageTitle } from '@/app/usePageTitle';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, Loading } from '@/components/states';
 import { useClient } from '@/features/client/clientQueries';
@@ -41,6 +42,7 @@ import './plan.css';
  * practitioner does in this application and it needs the width.
  */
 export function PlanPage() {
+  usePageTitle('Πλάνο διατροφής');
   const params = useParams();
   const clientId = Number(params.clientId);
   const planId = Number(params.planId);

@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, Loading } from '@/components/states';
 import { messageFor } from '@/api/messages';
+import { usePageTitle } from '@/app/usePageTitle';
 import { strings } from '@/strings';
 import { displayValue, formatDate, useClient, useDeleteClient } from './clientQueries';
 import './client.css';
@@ -17,6 +18,7 @@ const TABS = [
 ];
 
 export function ClientDetailPage() {
+  usePageTitle('Καρτέλα πελάτη');
   const params = useParams();
   const id = Number(params.clientId);
   const navigate = useNavigate();

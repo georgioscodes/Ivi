@@ -84,3 +84,37 @@
   font-weight: 600;
   border-bottom-color: var(--brand-taupe);
 }
+
+/*
+  Off-screen until focused, then it lands where it can be read. Not `display: none` — a hidden
+  element is not focusable, so the link would exist and never be reachable, which is the usual way
+  a skip link ends up decorative.
+*/
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: 0;
+  z-index: 10;
+  transform: translateY(-150%);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid var(--border-control);
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform var(--duration-fast);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The target takes focus programmatically, so it must not draw a ring as if it were a control. */
+.shell__main:focus {
+  outline: none;
+}

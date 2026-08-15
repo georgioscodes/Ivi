@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { messageFor } from '@/api/messages';
+import { usePageTitle } from '@/app/usePageTitle';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Empty, ErrorState, Skeleton } from '@/components/states';
 import { Pagination } from '@/components/Pagination';
@@ -20,6 +21,7 @@ import './food.css';
 const PAGE_SIZE = 20;
 
 export function FoodCataloguePage() {
+  usePageTitle('Τρόφιμα');
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get('page') ?? 0);
   const category = searchParams.get('category') ?? '';

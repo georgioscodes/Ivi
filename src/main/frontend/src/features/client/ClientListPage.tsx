@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
+import { usePageTitle } from '@/app/usePageTitle';
 import { Empty, ErrorState, Skeleton } from '@/components/states';
 import { Pagination } from '@/components/Pagination';
 import { useDebounced } from '@/components/useDebounced';
@@ -11,6 +12,7 @@ import './client.css';
 const PAGE_SIZE = 20;
 
 export function ClientListPage() {
+  usePageTitle('Πελάτες');
   // Search and page live in the URL, so a result list can be linked, bookmarked and returned to
   // with the back button. Holding them in component state loses all three.
   const [searchParams, setSearchParams] = useSearchParams();

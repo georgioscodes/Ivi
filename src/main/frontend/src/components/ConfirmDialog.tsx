@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import { strings } from '@/strings';
 import './dialog.css';
@@ -37,6 +37,18 @@ export function ConfirmDialog({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
+  /*
+    Generated, not hardcoded. A page renders several of these at once — the plan builder has
+    three, all mounted, only one ever open — and with a fixed id every copy claimed the same one.
+    `aria-labelledby` resolves against the first match in the document, so opening "Διαγραφή
+    πλάνου" announced "Καθαρισμός ημέρας": a screen reader told the practitioner they were about
+    to clear a day while the button under their finger deleted the plan. Measured in the browser,
+    not inferred — the accessible name really did resolve to the wrong dialog's title.
+  */
+  const id = useId();
+  const titleId = `${id}-title`;
+  const bodyId = `${id}-body`;
+
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) {
@@ -58,8 +70,8 @@ export function ConfirmDialog({
     <dialog
       ref={dialogRef}
       className="dialog"
-      aria-labelledby="confirm-title"
-      aria-describedby="confirm-body"
+      aria-labelledby={titleId}
+      aria-describedby={bodyId}
       // Escape closes the dialog natively; this keeps React's state in step with that.
       onCancel={(event) => {
         event.preventDefault();
@@ -68,10 +80,10 @@ export function ConfirmDialog({
         }
       }}
     >
-      <h2 className="dialog__title" id="confirm-title">
+      <h2 className="dialog__title" id={titleId}>
         {title}
       </h2>
-      <p className="dialog__body" id="confirm-body">
+      <p className="dialog__body" id={bodyId}>
         {body}
       </p>
 

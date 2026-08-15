@@ -141,6 +141,33 @@ val frontendTest = tasks.register<NpmTask>("frontendTest") {
     outputs.upToDateWhen { false }
 }
 
+/**
+ * The end-to-end suite, against a running application.
+ *
+ * Deliberately **not** wired into `check`. These tests need the jar serving on a port and a real
+ * database behind it, so making the ordinary build depend on them would mean `./gradlew build`
+ * fails on a machine that simply has not started the application — and a check that fails for
+ * reasons unrelated to the change is a check people learn to skip.
+ *
+ * Run it against whatever is already up:
+ *
+ *     ./gradlew e2e                      # localhost:8080
+ *     IVI_BASE_URL=https://... ./gradlew e2e
+ *
+ * `IVI_CHROMIUM` points Playwright at a browser the machine already has, instead of downloading
+ * one. See playwright.config.ts.
+ */
+val e2e = tasks.register<NpmTask>("e2e") {
+    group = "verification"
+    description = "Runs the Playwright end-to-end suite against a running application."
+
+    dependsOn(tasks.npmInstall)
+    npmCommand = listOf("run", "test:e2e")
+
+    // Never up-to-date: the thing under test is a running server, not these files.
+    outputs.upToDateWhen { false }
+}
+
 tasks.named("check") {
     dependsOn(frontendTypecheck, frontendTest)
 }

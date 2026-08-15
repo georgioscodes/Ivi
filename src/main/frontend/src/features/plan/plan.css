@@ -148,7 +148,9 @@
 }
 
 .meal__empty {
-  color: var(--grey-400);
+  /* --grey-500, not --grey-400: the palette reserves 400 for control boundaries, where WCAG asks
+     3:1, and this is text at 3.16:1. Caught by measuring the rendered page rather than the token. */
+  color: var(--grey-500);
   font-size: var(--text-sm);
 }
 
@@ -441,7 +443,7 @@
 }
 
 .food-result__per {
-  color: var(--grey-400);
+  color: var(--grey-500);
 }
 
 /* --- Portion step ---------------------------------------------------------------------------- */
@@ -600,7 +602,9 @@
 
 .item__grip {
   cursor: grab;
-  color: var(--grey-400);
+  /* A drag handle is a control, and 1.4.11 asks 3:1 of one — which --grey-400 meets. It is
+     nudged to 500 anyway because the glyph is small enough to read as text. */
+  color: var(--grey-500);
   font-size: var(--text-sm);
   line-height: 1;
   padding-inline-end: var(--space-1);
@@ -671,6 +675,9 @@
   overflow reachable at all.
 */
 .analysis__scroll {
+  /* Positioned for the same reason as .table-scroll: an unpositioned scroll container does not
+     clip absolutely-positioned descendants, and this table has visually-hidden text in it. */
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

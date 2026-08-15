@@ -29,7 +29,15 @@
 
 /* --- Table ----------------------------------------------------------------------------------- */
 
+/*
+ * `position: relative` is not decoration. An `overflow` container only clips descendants whose
+ * containing block is inside it, and an absolutely-positioned element resolves against the nearest
+ * *positioned* ancestor — so without this, the visually-hidden "Ενέργειες" label in the last
+ * column escaped the scroll box entirely and dragged the whole page 11px wider than the tablet
+ * viewport. A one-pixel, invisible element, causing horizontal scroll on a real screen size.
+ */
 .table-scroll {
+  position: relative;
   overflow-x: auto;
 }
 

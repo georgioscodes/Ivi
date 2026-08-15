@@ -30,3 +30,7 @@ node_modules/
 .idea/
 *.iml
 .vscode/
+
+# Playwright output — traces, screenshots and the HTML report are per-run artefacts.
+src/main/frontend/test-results/
+src/main/frontend/playwright-report/

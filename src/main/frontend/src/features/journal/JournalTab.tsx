@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import type { JournalEntryResponse } from '@/api/types';
@@ -27,6 +27,15 @@ export function JournalTab() {
   const [editing, setEditing] = useState<JournalEntryResponse | null>(null);
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<JournalEntryResponse | null>(null);
+
+  /*
+    Where focus goes after a delete. The button that opened the dialog was inside the entry the
+    dialog destroyed, so the browser's usual restore has nowhere to put it and focus falls to the
+    document body — a keyboard user is silently returned to the top of the page with no idea the
+    delete succeeded. Caught by asking, in a browser, what `document.activeElement` was afterwards.
+  */
+  const newEntryRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLOListElement>(null);
 
   /*
     Debounced, and here the usual reason is the lesser one. Every list read writes a row to the
@@ -76,7 +85,12 @@ export function JournalTab() {
             onChange={(event) => setTerm(event.target.value)}
           />
         </div>
-        <button type="button" className="button button--primary" onClick={() => setCreating(true)}>
+        <button
+          type="button"
+          ref={newEntryRef}
+          className="button button--primary"
+          onClick={() => setCreating(true)}
+        >
           Νέα καταχώρηση
         </button>
       </div>
@@ -104,7 +118,7 @@ export function JournalTab() {
             An ordered list, not a table. An entry is a piece of prose of no fixed length, and the
             date it belongs to is its heading rather than a column beside it.
           */}
-          <ol className="journal__list" aria-busy={query.isFetching || undefined}>
+          <ol className="journal__list" ref={listRef} aria-busy={query.isFetching || undefined}>
             {entries.map((entry) => (
               <li className="entry" key={entry.id}>
                 <header className="entry__header">
@@ -191,7 +205,17 @@ export function JournalTab() {
         onCancel={() => setRemoving(null)}
         onConfirm={() => {
           if (removing) {
-            remove.mutate(removing.id, { onSettled: () => setRemoving(null) });
+            remove.mutate(removing.id, {
+              onSettled: () => {
+                setRemoving(null);
+                // After the list has been replaced: the first surviving entry's own actions, or
+                // the control that adds a new one when nothing is left.
+                requestAnimationFrame(() => {
+                  const survivor = listRef.current?.querySelector<HTMLButtonElement>('button');
+                  (survivor ?? newEntryRef.current)?.focus();
+                });
+              },
+            });
           }
         }}
       />

@@ -13,6 +13,17 @@ export function AppShell() {
 
   return (
     <div className="shell">
+      {/*
+        The first thing Tab reaches, and hidden until it is. Every screen repeats the same brand,
+        two nav links and the account block, so without this a keyboard user walks past all of
+        them on every page before reaching anything they came for. Cheap to add and immediately
+        obvious when it is missing — which it was, until the keyboard spec asked what the first
+        tab stop actually was.
+      */}
+      <a className="skip-link" href="#main">
+        Μετάβαση στο περιεχόμενο
+      </a>
+
       <header className="shell__header">
         <span className="shell__brand">{strings.app.name}</span>
 
@@ -56,7 +67,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="shell__main">
+      <main className="shell__main" id="main" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

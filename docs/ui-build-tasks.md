@@ -624,16 +624,79 @@ own change rather than a quiet edit here.
 **Also recorded:** the food catalogue search has both defects this block fixed — the accent folding
 and the unescaped wildcard — in a surface used far more often than this one.
 
-## Block 9 — Quality
+## Block 9 — Quality ✅
 
-- [ ] Component tests for the builder interactions
-- [ ] Playwright end-to-end over the real stack — Chromium is already available in the dev
-      environment
-- [ ] **Greek rendering asserted in the browser**, as the PDF work does: check the text, do not
+- [x] Component tests for the builder interactions
+- [x] Playwright end-to-end over the real stack, committed to the repository
+- [x] **Greek rendering asserted in the browser**, as the PDF work does: check the text, do not
       glance at it
-- [ ] Keyboard navigation and focus management, particularly in the builder
-- [ ] Contrast verification against the tokens
-- [ ] Tablet layout — an explicitly supported way of working
+- [x] Keyboard navigation and focus management, particularly in the builder
+- [x] Contrast verification against the tokens
+- [x] Tablet layout — an explicitly supported way of working
+
+The throwaway Playwright scripts that verified every previous block are now a committed suite:
+41 tests in `src/main/frontend/e2e`, run with `./gradlew e2e` against an application that is
+already up. See [`e2e/README.md`](../src/main/frontend/e2e/README.md).
+
+Deliberately **not** part of `check`. These need a server and a database, and a check that fails
+for reasons unrelated to the change is a check people learn to skip. `IVI_CHROMIUM` points at a
+browser the machine already has instead of downloading one, which is what makes it runnable in a
+container with a prebuilt Chromium.
+
+### What the suite found
+
+**A screen reader was told the wrong thing before a destructive action.** `ConfirmDialog`
+hardcoded `id="confirm-title"`, and the plan page renders three of them at once. `aria-labelledby`
+resolves against the first match in the document, so opening «Διαγραφή πλάνου» announced
+«Καθαρισμός ημέρας». Measured, not deduced: the browser really did resolve the accessible name to
+another dialog's title. Generated ids fix it, and the test deliberately opens the *second* dialog
+on the page — checking the first would have passed while every other dialog on it lied.
+
+**Focus was stranded by a delete.** The journal's delete button lives inside the entry it removes,
+so the browser's usual focus restore had nowhere to put it and focus fell to `<body>` — a keyboard
+user silently returned to the top of the page with no indication the delete had worked. Focus now
+moves to the first surviving entry, or to «Νέα καταχώρηση» when the list empties.
+
+**There was no skip link.** Every page repeats the brand, two nav links and the account block, so
+reaching the content meant tabbing past all of them, on every page.
+
+**Every page was titled "Ivi".** WCAG 2.4.2, and it makes the back button, a row of tabs and the
+history list equally useless. Titles name the *kind* of page — «Καρτέλα πελάτη · Ivi» — and
+deliberately **never the client**: a document title reaches browser history, the OS window title
+and the task switcher, so naming the person would write Article 9 data into places this
+application neither controls nor can erase.
+
+**Text was using a boundary colour.** `--grey-400` is documented in the palette as a control
+boundary at 3.07:1, which is right for WCAG 1.4.11 and wrong for text. Three rules used it as text
+at 3.16:1 — under the 4.5:1 body threshold. The palette table was correct all along; what was
+missing was a check that the *pages* honoured it, which is what measuring computed styles adds.
+
+**A one-pixel invisible element made the page scroll sideways on a tablet.** The best find of the
+block. The food catalogue overflowed by 11px, and nothing visible stuck out. It was the
+visually-hidden «Ενέργειες» column label: `position: absolute` resolves against the nearest
+*positioned* ancestor, and `.table-scroll` was not positioned — so `overflow-x: auto` never
+clipped it and it dragged the document 11px wider. Scroll containers holding visually-hidden text
+now establish a containing block.
+
+### Two of my own mistakes, worth recording
+
+**A test that asserted a browser quirk.** The focus-trap check required focus to be inside the
+dialog after every Tab, and failed. Probed against a bare native `<dialog>` with no application
+code at all, Chromium cycles A → B → body → A: focus passes through the body while wrapping. The
+dialog was behaving correctly and the assertion was wrong. It now checks the property that
+actually matters — that focus never reaches anything *behind* the modal.
+
+**A test that skipped itself.** The keyboard-reorder test needed a meal with two items, and the
+fixture seeded them into two different meals, so `test.skip` fired and the run summary looked
+identical to a pass. The fixture seeds them together now, and the precondition is asserted rather
+than skipped.
+
+### Left as it is
+
+At phone widths (420px) the page still scrolls sideways by 25px, from `.shell__account` in the app
+shell. Phones are not a supported way of working — the tablet is — and the header wants a
+considered narrow layout rather than a nudge. The tablet project covers 810px, which is the size
+that was promised.
 
 ---
 

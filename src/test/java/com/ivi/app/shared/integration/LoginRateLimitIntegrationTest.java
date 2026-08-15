@@ -1,6 +1,7 @@
 package com.ivi.app.shared.integration;
 
 import com.ivi.app.shared.security.LoginRateLimiter;
+import com.ivi.app.shared.test.CsrfTokens;
 import com.ivi.app.shared.test.TestcontainersConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -211,8 +212,13 @@ class LoginRateLimitIntegrationTest {
         assertThat(blocked.getBody()).contains("Too many sign-in attempts");
     }
 
+    /**
+     * Signs in the way a browser does, CSRF token and all. Login is a state-changing POST and is
+     * protected like any other, so a bare post gets 403 from the filter chain and never reaches
+     * the limiter.
+     */
     private ResponseEntity<String> attemptLogin(String email) {
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = CsrfTokens.headersFor(CsrfTokens.prime(restTemplate));
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         return restTemplate.postForEntity("/api/v1/auth/login",

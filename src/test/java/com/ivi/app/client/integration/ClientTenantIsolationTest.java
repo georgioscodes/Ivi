@@ -3,6 +3,7 @@ package com.ivi.app.client.integration;
 import com.ivi.app.practitioner.dto.PractitionerRegisterRequest;
 import com.ivi.app.practitioner.repository.PractitionerRepository;
 import com.ivi.app.practitioner.service.PractitionerService;
+import com.ivi.app.shared.test.CsrfTokens;
 import com.ivi.app.shared.test.TestcontainersConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 
@@ -46,13 +48,25 @@ class ClientTenantIsolationTest {
     @Autowired
     private PractitionerRepository practitionerRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private HttpHeaders alice;
     private HttpHeaders bob;
     private Long aliceClientId;
 
+    /**
+     * Clears the tenant root and everything hanging off it.
+     *
+     * <p>{@code practitionerRepository.deleteAll()} on its own is not enough and fails outright:
+     * the clients these tests create, and the audit rows their reads produce, both reference the
+     * practitioner, so the second test in the class hits a foreign key violation before it starts.
+     * CASCADE follows those references wherever they lead, which keeps this correct as modules are
+     * added rather than needing a delete order maintained by hand.
+     */
     @BeforeEach
     void setUp() {
-        practitionerRepository.deleteAll();
+        jdbcTemplate.execute("TRUNCATE TABLE practitioner CASCADE");
 
         practitionerService.register(new PractitionerRegisterRequest(
             "alice@example.gr", PASSWORD, "Alice", "Alice Nutrition"));
@@ -170,8 +184,18 @@ class ClientTenantIsolationTest {
             .isEqualTo("Maria Papadopoulou");
     }
 
+    /**
+     * Signs in and returns everything a subsequent request needs: the session cookie, and the CSRF
+     * token in both places Spring compares it.
+     *
+     * <p>Login is itself a state-changing POST, so it needs a token of its own before it will be
+     * accepted — hence the priming request. The token is re-read from the login response in case
+     * it was rotated, rather than assumed to survive.
+     */
     private HttpHeaders login(String email) {
-        HttpHeaders headers = new HttpHeaders();
+        String csrfToken = CsrfTokens.prime(restTemplate);
+
+        HttpHeaders headers = CsrfTokens.headersFor(csrfToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         ResponseEntity<String> response = restTemplate.postForEntity(
@@ -188,8 +212,16 @@ class ClientTenantIsolationTest {
         List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
         assertThat(cookies).isNotNull();
 
+        String currentToken = CsrfTokens.issuedBy(response).orElse(csrfToken);
+
         HttpHeaders authenticated = new HttpHeaders();
-        cookies.forEach(cookie -> authenticated.add(HttpHeaders.COOKIE, cookie.split(";", 2)[0]));
+        cookies.stream()
+            .map(cookie -> cookie.split(";", 2)[0])
+            .filter(cookie -> !cookie.startsWith(CsrfTokens.COOKIE_NAME + "="))
+            .forEach(cookie -> authenticated.add(HttpHeaders.COOKIE, cookie));
+
+        authenticated.add(HttpHeaders.COOKIE, CsrfTokens.COOKIE_NAME + "=" + currentToken);
+        authenticated.add(CsrfTokens.HEADER_NAME, currentToken);
         return authenticated;
     }
 

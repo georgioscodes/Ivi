@@ -1,5 +1,6 @@
 package com.ivi.app.shared.integration;
 
+import com.ivi.app.shared.test.CsrfTokens;
 import com.ivi.app.shared.test.TestcontainersConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import javax.sql.DataSource;
@@ -79,23 +84,76 @@ class IviApplicationIntegrationTest {
         assertThat(response.getHeaders().getFirst("X-Correlation-Id")).isEqualTo(supplied);
     }
 
+    /**
+     * An unknown path with no file extension is a client route, not a missing page: the router
+     * runs in the browser, so the server cannot know whether {@code /client/42/plan/7} is real.
+     * The shell is returned and the client decides. This test asserted a 404 here, which described
+     * the application before {@code SpaResourceConfig} existed.
+     */
     @Test
-    void shouldReturn404_whenThePathMatchesNoHandler() {
+    void shouldServeTheAppShell_whenThePathIsAClientRoute() {
         // When
         ResponseEntity<String> response = restTemplate.getForEntity("/no-such-path", String.class);
 
         // Then
-        assertThat(response.getStatusCode().value()).isEqualTo(404);
-        assertThat(response.getBody()).contains("Resource not found");
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody()).contains("<div id=\"root\">");
+    }
+
+    /**
+     * The fallback deliberately excludes {@code /api}, and authentication is checked before
+     * routing — so an unknown endpoint answers 401 rather than disclosing whether it exists. What
+     * matters here is the negative: it is never the HTML shell, which would turn a typo into a
+     * parse error far from its cause. The resolver's own rules are covered by
+     * {@code SpaFallbackResolverTest}; this asserts the wiring end to end.
+     */
+    @Test
+    void shouldNotServeTheAppShell_whenAnApiPathMatchesNoHandler() {
+        // When
+        ResponseEntity<String> response =
+            restTemplate.getForEntity("/api/v1/no-such-endpoint", String.class);
+
+        // Then
+        assertThat(response.getStatusCode().value()).isEqualTo(401);
+        assertThat(response.getBody()).doesNotContain("<div id=\"root\">");
     }
 
     @Test
+    void shouldReturn404_whenAnAssetIsMissing() {
+        // When — a dot in the last segment means a filename, and a missing file is a broken build
+        ResponseEntity<String> response =
+            restTemplate.getForEntity("/no-such-bundle.js", String.class);
+
+        // Then
+        assertThat(response.getStatusCode().value()).isEqualTo(404);
+    }
+
+    /**
+     * CSRF protection runs in the filter chain, ahead of the dispatcher, so a token is needed
+     * before the request gets far enough to be rejected for its <em>method</em>. Without one this
+     * asserts 403 and proves nothing about 405 handling.
+     */
+    @Test
     void shouldReturn405_whenTheMethodIsNotSupported() {
+        // Given
+        HttpHeaders headers = CsrfTokens.headersFor(CsrfTokens.prime(restTemplate));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // When
+        ResponseEntity<String> response = restTemplate.exchange(
+            "/actuator/health", HttpMethod.POST, new HttpEntity<>("{}", headers), String.class);
+
+        // Then
+        assertThat(response.getStatusCode().value()).isEqualTo(405);
+    }
+
+    @Test
+    void shouldReturn403_whenAWriteCarriesNoCsrfToken() {
         // When
         ResponseEntity<String> response =
             restTemplate.postForEntity("/actuator/health", "{}", String.class);
 
-        // Then
-        assertThat(response.getStatusCode().value()).isEqualTo(405);
+        // Then — the protection that made the previous test's original form misleading
+        assertThat(response.getStatusCode().value()).isEqualTo(403);
     }
 }

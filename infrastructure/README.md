@@ -65,6 +65,22 @@ Both settings are driven from the same variable so they cannot drift apart. Flip
 a managed certificate and a DNS cutover, so plan it as a deliberate change rather than a flag flip
 on a Friday.
 
+There is a third thing coupled to the same switch, in the application rather than the
+infrastructure: the runtime module sets **`TRUSTED_PROXY_COUNT`** on the Cloud Run service, and it
+must move from `0` to `1` at the same time. It is how many `X-Forwarded-For` entries were appended
+by proxies we control, counting from the right, and adding a load balancer adds a hop.
+
+Both directions of getting it wrong are quiet, which is why it belongs in this section rather than
+in a runbook:
+
+- **Too low** (left at `0` behind the balancer) — every request appears to come from the balancer,
+  so the per-address login limit stops telling callers apart. It degrades safely; the per-email
+  limit still protects individual accounts.
+- **Too high** (left at `1` with the perimeter off) — the header is believed when nothing trustworthy
+  is writing it, so a caller can choose their own address and both evade the per-address limit and
+  forge the address in the audit trail. This is the dangerous direction, and it is the one that
+  happens if the perimeter is ever turned back off without touching the variable.
+
 ## Conventions
 
 - One state file per environment, in the bootstrap bucket, with versioning and locking enabled.
